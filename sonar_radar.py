@@ -35,20 +35,22 @@ DIST_MAX_MM   = 500     # 有効距離上限
 DIST_INVALID  = 2000    # 測定不能値
 
 # --- モーター設定 ---
-CALIB_SPEED   = 25      # キャリブレーション時の速度
-SCAN_SPEED    = 20      # スキャン時の速度
-SETTLE_S      = 0.05    # モーター停止後の整定待ち（秒）
+CALIB_SPEED   = 12      # キャリブレーション時の速度
+SCAN_SPEED    = 7       # スキャン時の速度
+SETTLE_S      = 0.15    # モーター停止後の整定待ち（秒）
 
 # --- カラー判定 ---
 RED_SAT_MIN  = 40
 RED_VAL_MIN  = 40
-BLUE_HUE_LO  = 200
+BLUE_HUE_LO  = 210
 BLUE_HUE_HI  = 270
-BLUE_SAT_MIN = 40
-BLUE_VAL_MIN = 40
+BLUE_SAT_MIN = 580
+BLUE_VAL_MIN = 100
 
 
 # --- モーター補助関数（libspikehat の既存APIを組み合わせ） ---
+
+STOP_EARLY_DEG = 2      # コースト分を見込んでターゲット手前で止める
 
 def motor_run_for_degrees(hat, port, degrees, speed):
     """指定角度だけ回転して停止する。libspikehat の汎用APIが追加されるまでの代替実装。"""
@@ -56,6 +58,8 @@ def motor_run_for_degrees(hat, port, degrees, speed):
         return
     start = hat.motor_get_position(port)
     target = start + degrees
+    early = STOP_EARLY_DEG if abs(degrees) > STOP_EARLY_DEG * 2 else 0
+    adjusted = target - early if degrees > 0 else target + early
     actual_speed = speed if degrees > 0 else -speed
     hat.motor_start(port, actual_speed)
     while True:
@@ -64,9 +68,9 @@ def motor_run_for_degrees(hat, port, degrees, speed):
             cur = hat.motor_get_position(port)
         except RuntimeError:
             continue
-        if degrees > 0 and cur >= target:
+        if degrees > 0 and cur >= adjusted:
             break
-        if degrees < 0 and cur <= target:
+        if degrees < 0 and cur <= adjusted:
             break
     hat.motor_stop(port)
 
@@ -124,12 +128,14 @@ def calibrate(hat, scan_range):
     print(f"赤マーカー検出。{scan_range}度 正方向に移動して0°へ...", file=sys.stderr)
     motor_run_for_degrees(hat, PORT_MOTOR, scan_range, CALIB_SPEED)
     time.sleep(SETTLE_S)
-    print("キャリブレーション完了 (現在位置 = 0°)", file=sys.stderr)
+    zero_pos = hat.motor_get_position(PORT_MOTOR)
+    print(f"キャリブレーション完了 (現在位置 = 0°, encoder={zero_pos})", file=sys.stderr)
+    return zero_pos
 
 
 # --- スキャン ---
 
-def do_scan(hat, scan_range):
+def do_scan(hat, scan_range, zero_pos):
     """
     -scan_range〜+scan_range を SCAN_STEP_DEG 刻みで計測する。
     戻り値: [{"angle": int, "distance_mm": int|None}, ...]
@@ -144,14 +150,27 @@ def do_scan(hat, scan_range):
 
     motor_run_for_degrees(hat, PORT_MOTOR, scan_min, SCAN_SPEED)
     time.sleep(SETTLE_S)
-    current_deg = scan_min
 
     for angle in angles:
-        move = angle - current_deg
-        if move != 0:
+        # 実際の現在位置から移動量を計算して累積誤差を補正
+        try:
+            actual_now = hat.motor_get_position(PORT_MOTOR) - zero_pos
+        except RuntimeError:
+            actual_now = angle
+        move = angle - actual_now
+        if abs(move) > 1:
             motor_run_for_degrees(hat, PORT_MOTOR, move, SCAN_SPEED)
             time.sleep(SETTLE_S)
-            current_deg = angle
+
+            # 正方向移動後に青マーカー（右端）を検出したらスキャン終了
+            if move > 0:
+                try:
+                    h, s, v = hat.color_read_hsv(PORT_COLOR)
+                    if is_blue(h, s, v):
+                        print("青マーカー検出: スキャン右端に達しました", file=sys.stderr)
+                        break
+                except RuntimeError:
+                    pass
 
         # 3回計測して中央値を採用
         samples = []
@@ -165,12 +184,21 @@ def do_scan(hat, scan_range):
             time.sleep(0.02)
 
         dist = sorted(samples)[len(samples) // 2] if samples else None
-        results.append({"angle": angle, "distance_mm": dist})
+        try:
+            actual_angle = hat.motor_get_position(PORT_MOTOR) - zero_pos
+        except RuntimeError:
+            actual_angle = angle
+        results.append({"angle": actual_angle, "distance_mm": dist})
         label = f"{dist:5d} mm" if dist is not None else " null"
-        print(f"  {angle:+4d}° -> {label}", file=sys.stderr)
+        print(f"  cmd:{angle:+4d}° actual:{actual_angle:+4d}° -> {label}", file=sys.stderr)
 
+    # 実際の位置から0°へ帰還
     print("0°へ帰還...", file=sys.stderr)
-    motor_run_for_degrees(hat, PORT_MOTOR, -current_deg, SCAN_SPEED)
+    try:
+        actual_now = hat.motor_get_position(PORT_MOTOR) - zero_pos
+    except RuntimeError:
+        actual_now = 0
+    motor_run_for_degrees(hat, PORT_MOTOR, -actual_now, SCAN_SPEED)
     time.sleep(SETTLE_S)
 
     return results
@@ -198,8 +226,8 @@ def main():
         hat.port_config(PORT_DISTANCE, DEVICE_DISTANCE)
         time.sleep(1.0)
 
-        calibrate(hat, args.range)
-        results = do_scan(hat, args.range)
+        zero_pos = calibrate(hat, args.range)
+        results = do_scan(hat, args.range, zero_pos)
 
     print(json.dumps(results, ensure_ascii=False, indent=2))
 

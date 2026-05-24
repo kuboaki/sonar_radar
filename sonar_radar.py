@@ -30,8 +30,8 @@ PORT_DISTANCE = 3   # ポートD
 
 # --- スキャン設定 ---
 SCAN_STEP_DEG = 5       # 刻み幅（度）
-DIST_MIN_MM   = 150     # 有効距離下限
-DIST_MAX_MM   = 500     # 有効距離上限
+DIST_MIN_MM   = 50      # 有効距離下限
+DIST_MAX_MM   = 300     # 有効距離上限
 DIST_INVALID  = 2000    # 測定不能値
 
 # --- モーター設定 ---

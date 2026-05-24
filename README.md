@@ -2,6 +2,8 @@
 
 2D radar scanner using LEGO SPIKE Prime + Raspberry Pi Build HAT via [libspikehat](https://github.com/kuboaki/libspikehat).
 
+![sonar_radar overview](docs/sonar_radar_overview.jpg)
+
 [日本語版 README](README_ja.md)
 
 ## Hardware Configuration

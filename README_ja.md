@@ -3,6 +3,8 @@
 LEGO SPIKE Prime + Raspberry Pi Build HAT を使った2Dレーダースキャナー。
 [libspikehat](https://github.com/kuboaki/libspikehat) 経由でデバイスを制御します。
 
+![sonar_radar overview](docs/sonar_radar_overview.jpg)
+
 ## ハードウェア構成
 
 | ポート | デバイス | 役割 |

@@ -21,6 +21,7 @@ import time
 import json
 import argparse
 sys.path.insert(0, '/home/kuboaki/projects/libspikehat/python')
+
 from spikehat import SpikeHat, DEVICE_MOTOR_L, DEVICE_COLOR, DEVICE_DISTANCE
 
 # --- ハードウェア設定 ---
@@ -35,9 +36,11 @@ DIST_MAX_MM   = 300     # 有効距離上限
 DIST_INVALID  = 2000    # 測定不能値
 
 # --- モーター設定 ---
-CALIB_SPEED   = 12      # キャリブレーション時の速度
-SCAN_SPEED    = 7       # スキャン時の速度
-SETTLE_S      = 0.15    # モーター停止後の整定待ち（秒）
+CALIB_SPEED       = 12      # キャリブレーション時の速度
+SCAN_SPEED        = 7       # ステップスキャン時の速度
+CONTINUOUS_SPEED  = 7       # 連続スキャン時の速度
+SETTLE_S          = 0.15    # モーター停止後の整定待ち（秒）
+SAMPLE_INTERVAL_S = 0.10    # 連続スキャンのサンプリング間隔（距離センサー更新周期）
 
 # --- カラー判定 ---
 RED_SAT_MIN  = 40
@@ -204,6 +207,71 @@ def do_scan(hat, scan_range, zero_pos):
     return results
 
 
+# --- 連続スキャン ---
+
+def do_continuous_scan(hat, scan_range, zero_pos):
+    """
+    -scan_range から +scan_range まで連続回転しながら
+    SAMPLE_INTERVAL_S ごとに角度と距離を記録する。
+    戻り値: [{"angle": int, "distance_mm": int|None}, ...]
+    """
+    scan_min = -scan_range
+    scan_max =  scan_range
+    results  = []
+
+    print(f"連続スキャン開始: {scan_min}°〜{scan_max}°, "
+          f"速度={CONTINUOUS_SPEED}, 間隔={SAMPLE_INTERVAL_S*1000:.0f}ms",
+          file=sys.stderr)
+
+    # スキャン開始位置へ移動
+    motor_run_for_degrees(hat, PORT_MOTOR, scan_min, CALIB_SPEED)
+    time.sleep(SETTLE_S)
+
+    # 連続回転しながらサンプリング
+    hat.motor_start(PORT_MOTOR, CONTINUOUS_SPEED)
+    while True:
+        time.sleep(SAMPLE_INTERVAL_S)
+
+        try:
+            actual_angle = hat.motor_get_position(PORT_MOTOR) - zero_pos
+        except RuntimeError:
+            continue
+
+        try:
+            dist = filter_distance(hat.distance_read(PORT_DISTANCE))
+        except RuntimeError:
+            dist = None
+
+        results.append({"angle": actual_angle, "distance_mm": dist})
+        label = f"{dist:5d} mm" if dist is not None else " null"
+        print(f"  {actual_angle:+4d}° -> {label}", file=sys.stderr)
+
+        # 青マーカー検出 or 目標角度到達でスキャン終了
+        if actual_angle >= scan_max:
+            break
+        try:
+            h, s, v = hat.color_read_hsv(PORT_COLOR)
+            if is_blue(h, s, v):
+                print("青マーカー検出: スキャン右端に達しました", file=sys.stderr)
+                break
+        except RuntimeError:
+            pass
+
+    hat.motor_stop(PORT_MOTOR)
+    time.sleep(SETTLE_S)
+
+    # 0°へ帰還
+    print("0°へ帰還...", file=sys.stderr)
+    try:
+        actual_now = hat.motor_get_position(PORT_MOTOR) - zero_pos
+    except RuntimeError:
+        actual_now = 0
+    motor_run_for_degrees(hat, PORT_MOTOR, -actual_now, CALIB_SPEED)
+    time.sleep(SETTLE_S)
+
+    return results
+
+
 # --- メイン ---
 
 def main():
@@ -211,6 +279,8 @@ def main():
     parser.add_argument("--range", type=int, default=65,
                         choices=[35, 65],
                         help="旋回範囲（片側の度数）: 35 または 65 (デフォルト: 65)")
+    parser.add_argument("--mode", choices=["step", "continuous"], default="step",
+                        help="スキャンモード: step=停止計測, continuous=連続計測 (デフォルト: step)")
     args = parser.parse_args()
 
     try:
@@ -227,7 +297,10 @@ def main():
         time.sleep(1.0)
 
         zero_pos = calibrate(hat, args.range)
-        results = do_scan(hat, args.range, zero_pos)
+        if args.mode == "continuous":
+            results = do_continuous_scan(hat, args.range, zero_pos)
+        else:
+            results = do_scan(hat, args.range, zero_pos)
 
     print(json.dumps(results, ensure_ascii=False, indent=2))
 

@@ -30,10 +30,11 @@ PORT_COLOR    = 2   # ポートC
 PORT_DISTANCE = 3   # ポートD
 
 # --- スキャン設定 ---
-SCAN_STEP_DEG = 5       # 刻み幅（度）
+SCAN_STEP_DEG = 3       # 刻み幅（度）
 DIST_MIN_MM   = 50      # 有効距離下限
 DIST_MAX_MM   = 300     # 有効距離上限
 DIST_INVALID  = 2000    # 測定不能値
+DIST_OFFSET_MM = 25     # センサー面が旋回軸より前方にある分の距離補正値（mm）
 
 # --- モーター設定 ---
 CALIB_SPEED       = 12      # キャリブレーション時の速度
@@ -97,10 +98,13 @@ def is_blue(hue, sat, val):
 # --- 距離フィルタ ---
 
 def filter_distance(mm):
-    """有効距離ならmm値を、無効ならNoneを返す"""
-    if mm == DIST_INVALID or mm < DIST_MIN_MM or mm > DIST_MAX_MM:
+    """センサー生値を受け取り、旋回軸基準の有効距離を返す。範囲外はNone。"""
+    if mm == DIST_INVALID:
         return None
-    return mm
+    corrected = mm + DIST_OFFSET_MM  # センサー面オフセット分を加算して旋回軸基準の距離に変換
+    if corrected < DIST_MIN_MM or corrected > DIST_MAX_MM:
+        return None
+    return corrected
 
 
 # --- キャリブレーション ---

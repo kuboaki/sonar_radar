@@ -26,8 +26,8 @@ Place markers at ±35° or ±65° positions to define the scan range.
 | Parameter | Value |
 |-----------|-------|
 | Scan range | ±35° or ±65° (selectable) |
-| Step angle | 5° |
-| Valid distance | 150–500 mm |
+| Step angle | 3° |
+| Valid distance | 50–300 mm |
 | Origin (0°) | Front center |
 
 ## Requirements
@@ -70,7 +70,9 @@ On startup, the arm rotates counter-clockwise until the color sensor detects the
 ```
 sonar_radar/
 ├── sonar_radar.py   Main scanner script
-└── run.sh           Startup script (loads firmware + runs scanner)
+├── run.sh           Startup script (loads firmware + runs scanner)
+├── docs/            Documentation images
+└── model/           LEGO Studio model files
 ```
 
 ## License

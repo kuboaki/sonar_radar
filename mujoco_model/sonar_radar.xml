@@ -1,0 +1,92 @@
+<mujoco model="sonar_radar">
+
+  <compiler angle="degree" meshdir="meshes/"/>
+
+  <option timestep="0.001" gravity="0 0 -9.81"/>
+
+  <visual>
+    <headlight diffuse="0.7 0.7 0.7" ambient="0.3 0.3 0.3" specular="0.1 0.1 0.1"/>
+  </visual>
+
+  <asset>
+    <mesh name="radar_base_gray_mesh" file="radar_base_gray.stl" scale="1 1 1"/>
+    <mesh name="radar_base_red_mesh"  file="radar_base_red.stl"  scale="1 1 1"/>
+    <mesh name="radar_base_blue_mesh" file="radar_base_blue.stl" scale="1 1 1"/>
+    <mesh name="radar_dome_mesh"  file="radar_dome.stl"  scale="1 1 1"/>
+    <mesh name="motor_body_mesh"  file="motor_body.stl"  scale="1 1 1"/>
+    <mesh name="motor_rotor_mesh" file="motor_rotor.stl" scale="1 1 1"/>
+  </asset>
+
+  <worldbody>
+
+    <light name="light_top"  pos="0 0 1.5" dir="0 0 -1"
+           diffuse="0.8 0.8 0.8" specular="0.2 0.2 0.2" directional="true"/>
+    <light name="light_fill" pos="1 -1 0.8" dir="-1 1 -0.8"
+           diffuse="0.4 0.4 0.4" specular="0.0 0.0 0.0" directional="true"/>
+
+    <geom name="floor" type="plane" size="1 1 0.01"
+          rgba="0.6 0.6 0.6 1" contype="1" conaffinity="1"/>
+
+    <!-- 障害物: 正面右前方 約100mm、幅50mm の壁 -->
+    <geom name="wall" type="box"
+          pos="0.06 0.12 0.05"
+          size="0.025 0.005 0.05"
+          rgba="0.8 0.8 0.2 1"
+          contype="1" conaffinity="1"/>
+
+    <!-- 台座: ワールドに固定 -->
+    <body name="radar_base" pos="0 0 0" euler="0 0 0">
+      <inertial pos="0 0 0" mass="1.0" diaginertia="0.01 0.01 0.01"/>
+      <geom name="base_gray_geom" type="mesh" mesh="radar_base_gray_mesh"
+            contype="0" conaffinity="0" rgba="0.366 0.361 0.371 1"/>
+      <geom name="base_red_geom"  type="mesh" mesh="radar_base_red_mesh"
+            contype="0" conaffinity="0" rgba="0.578 0.010 0.002 1"/>
+      <geom name="base_blue_geom" type="mesh" mesh="radar_base_blue_mesh"
+            contype="0" conaffinity="0" rgba="0.000 0.089 0.515 1"/>
+
+      <!-- モーターボディ（固定） -->
+      <body name="motor_body" pos="0.0076 0.0004 0.0" euler="0 0 0">
+        <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
+        <geom name="motor_body_geom" type="mesh" mesh="motor_body_mesh"
+              contype="0" conaffinity="0" rgba="0.5 0.5 0.5 1"/>
+
+        <!-- モーターローター（旋回） -->
+        <body name="motor_rotor" pos="0.0001 0.0239 0.0160" euler="0 0 0">
+          <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
+          <joint name="turret_joint" type="hinge" axis="0 0 1"
+                 damping="0.5" armature="0.001"/>
+          <geom name="motor_rotor_geom" type="mesh" mesh="motor_rotor_mesh"
+                contype="0" conaffinity="0" rgba="0.8 0.4 0.1 1"/>
+
+          <!-- dome（rotorに従属） -->
+          <body name="radar_dome" pos="0 0.008 0.028" euler="0 0 180">
+            <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
+            <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
+                  contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>
+            <site name="sonar_site" pos="0 -0.016 0.000" size="0.01" rgba="1 0 0 1"/>
+            <site name="color_site" pos="0 0.048 0.008" size="0.01" rgba="1 1 0 1"/>
+          </body>
+
+        </body>
+      </body>
+
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor name="turret_motor" joint="turret_joint"
+           gear="10" ctrllimited="true" ctrlrange="-1 1"/>
+  </actuator>
+
+  <sensor>
+    <!-- 旋回角度・角速度 -->
+    <jointpos  name="turret_angle" joint="turret_joint"/>
+    <jointvel  name="turret_vel"   joint="turret_joint"/>
+    <!-- センサー位置・姿勢（ソナー取り付け面） -->
+    <framepos  name="sonar_pos"  objtype="site" objname="sonar_site"/>
+    <framequat name="sonar_quat" objtype="site" objname="sonar_site"/>
+    <framepos  name="color_pos"  objtype="site" objname="color_site"/>
+    <framequat name="color_quat" objtype="site" objname="color_site"/>
+  </sensor>
+
+</mujoco>

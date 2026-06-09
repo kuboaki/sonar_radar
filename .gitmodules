@@ -1,0 +1,6 @@
+[submodule "raspi/libspikehat"]
+	path = raspi/libspikehat
+	url = https://github.com/kuboaki/libspikehat.git
+[submodule "sim/libspikehat_sim"]
+	path = sim/libspikehat_sim
+	url = https://github.com/kuboaki/libspikehat_sim.git

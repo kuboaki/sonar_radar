@@ -17,10 +17,10 @@ sonar_radar.py - レーダースキャナー
 """
 
 import sys
-import time
+import os
 import json
 import argparse
-sys.path.insert(0, '/home/kuboaki/projects/libspikehat/python')
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'libspikehat', 'python'))
 
 from spikehat import SpikeHat, DEVICE_MOTOR_L, DEVICE_COLOR, DEVICE_DISTANCE
 
@@ -50,33 +50,6 @@ BLUE_HUE_LO  = 210
 BLUE_HUE_HI  = 270
 BLUE_SAT_MIN = 580
 BLUE_VAL_MIN = 100
-
-
-# --- モーター補助関数（libspikehat の既存APIを組み合わせ） ---
-
-STOP_EARLY_DEG = 2      # コースト分を見込んでターゲット手前で止める
-
-def motor_run_for_degrees(hat, port, degrees, speed):
-    """指定角度だけ回転して停止する。libspikehat の汎用APIが追加されるまでの代替実装。"""
-    if degrees == 0:
-        return
-    start = hat.motor_get_position(port)
-    target = start + degrees
-    early = STOP_EARLY_DEG if abs(degrees) > STOP_EARLY_DEG * 2 else 0
-    adjusted = target - early if degrees > 0 else target + early
-    actual_speed = speed if degrees > 0 else -speed
-    hat.motor_start(port, actual_speed)
-    while True:
-        time.sleep(0.005)
-        try:
-            cur = hat.motor_get_position(port)
-        except RuntimeError:
-            continue
-        if degrees > 0 and cur >= adjusted:
-            break
-        if degrees < 0 and cur <= adjusted:
-            break
-    hat.motor_stop(port)
 
 
 # --- カラー判定 ---
@@ -118,7 +91,7 @@ def calibrate(hat, scan_range):
     hat.motor_start(PORT_MOTOR, -CALIB_SPEED)
     found = False
     for _ in range(200):    # 最大200×50ms = 10秒
-        time.sleep(0.05)
+        hat.sleep(0.05)
         try:
             h, s, v = hat.color_read_hsv(PORT_COLOR)
             if is_red(h, s, v):
@@ -127,14 +100,14 @@ def calibrate(hat, scan_range):
         except RuntimeError:
             pass
     hat.motor_stop(PORT_MOTOR)
-    time.sleep(SETTLE_S)
+    hat.sleep(SETTLE_S)
 
     if not found:
         raise RuntimeError("赤マーカーが見つかりません。アームを正面付近に戻して再試行してください。")
 
     print(f"赤マーカー検出。{scan_range}度 正方向に移動して0°へ...", file=sys.stderr)
-    motor_run_for_degrees(hat, PORT_MOTOR, scan_range, CALIB_SPEED)
-    time.sleep(SETTLE_S)
+    hat.motor_run_for_degrees(PORT_MOTOR, scan_range, CALIB_SPEED)
+    hat.sleep(SETTLE_S)
     zero_pos = hat.motor_get_position(PORT_MOTOR)
     print(f"キャリブレーション完了 (現在位置 = 0°, encoder={zero_pos})", file=sys.stderr)
     return zero_pos
@@ -155,8 +128,8 @@ def do_scan(hat, scan_range, zero_pos):
     print(f"スキャン開始: {scan_min}°〜{scan_max}°, {SCAN_STEP_DEG}°刻み ({len(angles)}点)",
           file=sys.stderr)
 
-    motor_run_for_degrees(hat, PORT_MOTOR, scan_min, SCAN_SPEED)
-    time.sleep(SETTLE_S)
+    hat.motor_run_for_degrees(PORT_MOTOR, scan_min, SCAN_SPEED)
+    hat.sleep(SETTLE_S)
 
     for angle in angles:
         # 実際の現在位置から移動量を計算して累積誤差を補正
@@ -166,8 +139,8 @@ def do_scan(hat, scan_range, zero_pos):
             actual_now = angle
         move = angle - actual_now
         if abs(move) > 1:
-            motor_run_for_degrees(hat, PORT_MOTOR, move, SCAN_SPEED)
-            time.sleep(SETTLE_S)
+            hat.motor_run_for_degrees(PORT_MOTOR, move, SCAN_SPEED)
+            hat.sleep(SETTLE_S)
 
             # 正方向移動後に青マーカー（右端）を検出したらスキャン終了
             if move > 0:
@@ -188,7 +161,7 @@ def do_scan(hat, scan_range, zero_pos):
                     samples.append(d)
             except RuntimeError:
                 pass
-            time.sleep(0.02)
+            hat.sleep(0.02)
 
         dist = sorted(samples)[len(samples) // 2] if samples else None
         try:
@@ -205,8 +178,8 @@ def do_scan(hat, scan_range, zero_pos):
         actual_now = hat.motor_get_position(PORT_MOTOR) - zero_pos
     except RuntimeError:
         actual_now = 0
-    motor_run_for_degrees(hat, PORT_MOTOR, -actual_now, SCAN_SPEED)
-    time.sleep(SETTLE_S)
+    hat.motor_run_for_degrees(PORT_MOTOR, -actual_now, SCAN_SPEED)
+    hat.sleep(SETTLE_S)
 
     return results
 
@@ -228,13 +201,13 @@ def do_continuous_scan(hat, scan_range, zero_pos):
           file=sys.stderr)
 
     # スキャン開始位置へ移動
-    motor_run_for_degrees(hat, PORT_MOTOR, scan_min, CALIB_SPEED)
-    time.sleep(SETTLE_S)
+    hat.motor_run_for_degrees(PORT_MOTOR, scan_min, CALIB_SPEED)
+    hat.sleep(SETTLE_S)
 
     # 連続回転しながらサンプリング
     hat.motor_start(PORT_MOTOR, CONTINUOUS_SPEED)
     while True:
-        time.sleep(SAMPLE_INTERVAL_S)
+        hat.sleep(SAMPLE_INTERVAL_S)
 
         try:
             actual_angle = hat.motor_get_position(PORT_MOTOR) - zero_pos
@@ -262,7 +235,7 @@ def do_continuous_scan(hat, scan_range, zero_pos):
             pass
 
     hat.motor_stop(PORT_MOTOR)
-    time.sleep(SETTLE_S)
+    hat.sleep(SETTLE_S)
 
     # 0°へ帰還
     print("0°へ帰還...", file=sys.stderr)
@@ -270,8 +243,8 @@ def do_continuous_scan(hat, scan_range, zero_pos):
         actual_now = hat.motor_get_position(PORT_MOTOR) - zero_pos
     except RuntimeError:
         actual_now = 0
-    motor_run_for_degrees(hat, PORT_MOTOR, -actual_now, CALIB_SPEED)
-    time.sleep(SETTLE_S)
+    hat.motor_run_for_degrees(PORT_MOTOR, -actual_now, CALIB_SPEED)
+    hat.sleep(SETTLE_S)
 
     return results
 
@@ -298,7 +271,7 @@ def main():
         hat.port_config(PORT_MOTOR,    DEVICE_MOTOR_L)
         hat.port_config(PORT_COLOR,    DEVICE_COLOR)
         hat.port_config(PORT_DISTANCE, DEVICE_DISTANCE)
-        time.sleep(1.0)
+        hat.sleep(1.0)
 
         zero_pos = calibrate(hat, args.range)
         if args.mode == "continuous":

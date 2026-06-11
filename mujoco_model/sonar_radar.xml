@@ -53,8 +53,8 @@
         <!-- モーターローター（旋回） -->
         <body name="motor_rotor" pos="0.0001 0.0239 0.0160" euler="0 0 0">
           <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
-          <joint name="turret_joint" type="hinge" axis="0 0 1"
-                 damping="0.5" armature="0.001"/>
+          <joint name="motor_joint" type="hinge" axis="0 0 1"
+                 damping="0.55" armature="0.001"/>
           <geom name="motor_rotor_geom" type="mesh" mesh="motor_rotor_mesh"
                 contype="0" conaffinity="0" rgba="0.8 0.4 0.1 1"/>
 
@@ -74,14 +74,14 @@
   </worldbody>
 
   <actuator>
-    <motor name="turret_motor" joint="turret_joint"
-           gear="10" ctrllimited="true" ctrlrange="-1 1"/>
+    <motor name="turret_motor" joint="motor_joint"
+           gear="-10" ctrllimited="true" ctrlrange="-1 1"/>
   </actuator>
 
   <sensor>
     <!-- 旋回角度・角速度 -->
-    <jointpos  name="turret_angle" joint="turret_joint"/>
-    <jointvel  name="turret_vel"   joint="turret_joint"/>
+    <jointpos  name="turret_angle" joint="motor_joint"/>
+    <jointvel  name="turret_vel"   joint="motor_joint"/>
     <!-- センサー位置・姿勢（ソナー取り付け面） -->
     <framepos  name="sonar_pos"  objtype="site" objname="sonar_site"/>
     <framequat name="sonar_quat" objtype="site" objname="sonar_site"/>

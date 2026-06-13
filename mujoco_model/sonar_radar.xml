@@ -49,7 +49,7 @@
       <body name="motor_rotor" pos="-0.0080 -0.0238 0.0237" euler="0 0 0">
         <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
         <joint name="motor_joint" type="hinge" axis="0 0 1"
-               damping="0.55" armature="0.001"/>
+               damping="0.65" armature="0.001"/>
         <geom name="bevel_gear_12_geom" type="mesh" mesh="bevel_gear_12_mesh"
               contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>
       </body>

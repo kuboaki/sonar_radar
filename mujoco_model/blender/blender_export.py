@@ -319,6 +319,30 @@ export_stl(
 )
 
 
+# ── センサーサイト位置計算 ─────────────────────────────────
+
+def compute_local_site_pos(obj, rotor_axis_obj, rotate_z_deg):
+    """obj の matrix_world.translation を rotor_axis_obj 中心の
+    body ローカル座標（MJCF site pos 用、単位 m）に変換して返す"""
+    ax = rotor_axis_obj.matrix_world.translation
+    pos = obj.matrix_world.translation
+    x = pos.x - ax.x
+    y = pos.y - ax.y
+    z = pos.z - ax.z
+
+    angle = math.radians(rotate_z_deg)
+    cos_a = math.cos(angle)
+    sin_a = math.sin(angle)
+    rx = cos_a * x - sin_a * y
+    ry = sin_a * x + cos_a * y
+    rz = z
+
+    mj_x = -rx * SCALE
+    mj_y = -ry * SCALE
+    mj_z =  rz * SCALE
+    return mj_x, mj_y, mj_z
+
+
 # ── radar_dome エクスポート ───────────────────────────────
 
 print("\n" + "=" * 60)
@@ -336,6 +360,21 @@ dome_result = export_stl(
     rotor_axis_obj = rotor_axis_obj,
     out_filename   = "radar_dome.stl",
 )
+
+# センサー取り付け位置（dome ローカル座標、MJCF site pos）
+if rotor_axis_obj:
+    print("\n  -- センサー site pos（radar_dome ローカル座標）--")
+    sonar_obj = rotor_axis_obj  # 37316c01.dat = 距離センサー = 旋回軸そのもの
+    color_obj = bpy.data.objects.get("37308c01.dat")  # カラーセンサー
+
+    sx, sy, sz = compute_local_site_pos(sonar_obj, rotor_axis_obj, 180.0)
+    print(f'  <site name="sonar_site" pos="{sx:.4f} {sy:.4f} {sz:.4f}" size="0.01" rgba="1 0 0 1"/>')
+
+    if color_obj:
+        cx_, cy_, cz_ = compute_local_site_pos(color_obj, rotor_axis_obj, 180.0)
+        print(f'  <site name="color_site" pos="{cx_:.4f} {cy_:.4f} {cz_:.4f}" size="0.01" rgba="1 1 0 1"/>')
+    else:
+        print("  WARNING: 37308c01.dat (カラーセンサー) が見つかりません")
 
 
 # ── MJCF pos 計算 ─────────────────────────────────────────

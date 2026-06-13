@@ -43,8 +43,8 @@ import sys
 import numpy as np
 from stl import mesh as stl_mesh
 
-OUTPUT_DIR = "/Users/kuboaki/Documents/LEGO_Studio_models/sonar_radar_model/meshes/"
-LOG_PATH   = "/Users/kuboaki/Documents/LEGO_Studio_models/sonar_radar_model/blender_export_log.txt"
+OUTPUT_DIR = "/Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/meshes"
+LOG_PATH   = "/Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/blender/blender_export_log.txt"
 SCALE = 0.0004  # LDU → m
 
 
@@ -218,17 +218,20 @@ base_root   = bpy.data.objects.get("radar_base")
 red_root    = bpy.data.objects.get("marker_red")
 blue_root   = bpy.data.objects.get("marker_blue")
 dome_root   = bpy.data.objects.get("radar_dome")
+gear12_root = bpy.data.objects.get("bevel_gear_12")
 
 base_meshes  = collect_mesh_descendants(base_root,  stop_at_empty=True)  if base_root  else []
 red_meshes   = collect_mesh_descendants(red_root)   if red_root   else []
 blue_meshes  = collect_mesh_descendants(blue_root)  if blue_root  else []
 dome_meshes  = collect_mesh_descendants(dome_root)  if dome_root  else []
+gear12_meshes = collect_mesh_descendants(gear12_root) if gear12_root else []
 
 print(f"\n収集結果:")
 print(f"  radar_base  = {len(base_meshes)} MESH")
 print(f"  marker_red  = {len(red_meshes)} MESH  {'OK' if red_root else 'NOT FOUND'}")
 print(f"  marker_blue = {len(blue_meshes)} MESH  {'OK' if blue_root else 'NOT FOUND'}")
 print(f"  radar_dome  = {len(dome_meshes)} MESH")
+print(f"  bevel_gear_12 = {len(gear12_meshes)} MESH  {'OK' if gear12_root else 'NOT FOUND'}")
 
 
 # ── radar_base 共有オフセット計算 ─────────────────────────
@@ -297,6 +300,22 @@ export_stl(
     shared_offset  = base_shared_offset,
     rotate_z_deg   = 0.0,
     out_filename   = "radar_base_blue.stl",
+)
+
+
+# ── bevel_gear_12 エクスポート ────────────────────────────
+
+print("\n" + "=" * 60)
+print("bevel_gear_12 処理")
+print("=" * 60)
+
+export_stl(
+    meshes         = gear12_meshes,
+    name           = "bevel_gear_12",
+    center_mode    = "rotor_axis" if gear12_root else "center",
+    rotate_z_deg   = 0.0,
+    rotor_axis_obj = gear12_root,
+    out_filename   = "bevel_gear_12.stl",
 )
 
 

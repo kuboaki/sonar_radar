@@ -1,0 +1,172 @@
+# blender_export_log
+# LOG_PATH: /Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/blender/blender_export_log.txt
+
+============================================================
+シーン内オブジェクト一覧
+============================================================
+  [MESH ] 2780.dat                                 parent=radar_base  verts=2892
+  [MESH ] 2780.dat.001                             parent=radar_base  verts=2892
+  [MESH ] 2780.dat.002                             parent=radar_base  verts=2892
+  [MESH ] 2780.dat.003                             parent=radar_base  verts=2892
+  [MESH ] 2780.dat.004                             parent=radar_dome  verts=2892
+  [MESH ] 2780.dat.005                             parent=radar_dome  verts=2892
+  [MESH ] 2780.dat.006                             parent=radar_dome  verts=2892
+  [MESH ] 2780.dat.007                             parent=radar_dome  verts=2892
+  [MESH ] 2780.dat.008                             parent=radar_dome  verts=2892
+  [MESH ] 2780.dat.009                             parent=radar_dome  verts=2892
+  [MESH ] 2780.dat.010                             parent=radar_dome  verts=2892
+  [MESH ] 2780.dat.011                             parent=radar_dome  verts=2892
+  [MESH ] 3069b.dat                                parent=marker_blue  verts=72
+  [MESH ] 3069b.dat.001                            parent=marker_blue  verts=72
+  [MESH ] 3069b.dat.002                            parent=marker_red  verts=72
+  [MESH ] 3069b.dat.003                            parent=marker_red  verts=72
+  [MESH ] 32062.dat                                parent=bevel_gear_12  verts=382
+  [MESH ] 32073.dat                                parent=radar_base  verts=90
+  [MESH ] 32270.dat                                parent=bevel_gear_12  verts=1884
+  [MESH ] 32316.dat                                parent=radar_base  verts=4252
+  [MESH ] 32316.dat.001                            parent=radar_base  verts=4252
+  [MESH ] 32316.dat.002                            parent=radar_dome  verts=4252
+  [MESH ] 32498.dat                                parent=radar_dome  verts=12266
+  [MESH ] 32524.dat                                parent=radar_dome  verts=5988
+  [MESH ] 32524.dat.001                            parent=radar_dome  verts=5988
+  [MESH ] 32524.dat.002                            parent=radar_dome  verts=5988
+  [MESH ] 37308c01.dat                             parent=radar_dome  verts=6818
+  [MESH ] 37316c01.dat                             parent=radar_dome  verts=14591
+  [MESH ] 3749.dat                                 parent=radar_base  verts=791
+  [MESH ] 3749.dat.001                             parent=radar_base  verts=791
+  [MESH ] 3749.dat.002                             parent=radar_base  verts=791
+  [MESH ] 3749.dat.003                             parent=radar_base  verts=791
+  [MESH ] 39789.dat                                parent=marker_blue  verts=1364
+  [MESH ] 39789.dat.001                            parent=marker_red  verts=1364
+  [MESH ] 39790.dat                                parent=radar_base  verts=36312
+  [MESH ] 39793.dat                                parent=radar_base  verts=6746
+  [MESH ] 39793.dat.001                            parent=radar_base  verts=6746
+  [MESH ] 43093.dat                                parent=radar_base  verts=1447
+  [MESH ] 43093.dat.001                            parent=radar_base  verts=1447
+  [MESH ] 48989.dat                                parent=radar_dome  verts=5030
+  [MESH ] 48989.dat.001                            parent=radar_dome  verts=5030
+  [MESH ] 55615.dat                                parent=radar_base  verts=6326
+  [MESH ] 55615.dat.001                            parent=radar_base  verts=6326
+  [MESH ] 6558.dat                                 parent=radar_base  verts=4164
+  [MESH ] 6558.dat.001                             parent=radar_base  verts=4164
+  [MESH ] 6558.dat.002                             parent=radar_dome  verts=4164
+  [MESH ] 6558.dat.003                             parent=radar_dome  verts=4164
+  [MESH ] 6589.dat                                 parent=radar_base  verts=1468
+  [MESH ] 87082.dat                                parent=radar_dome  verts=3660
+  [MESH ] 87082.dat.001                            parent=radar_dome  verts=3660
+  [MESH ] 99773.dat                                parent=radar_base  verts=4602
+  [EMPTY] bevel_gear_12                            parent=radar_base
+  [MESH ] m71d95b20_202662_032825.dat              parent=bevel_gear_12  verts=3730
+  [MESH ] m71d95b20_202662_110634.dat              parent=radar_base  verts=24207
+  [EMPTY] marker_blue                              parent=radar_base
+  [EMPTY] marker_red                               parent=radar_base
+  [EMPTY] radar_base                               parent=sonar_radar07.io
+  [EMPTY] radar_dome                               parent=sonar_radar07.io
+  [EMPTY] sonar_radar07.io                         parent=(root)
+    SKIP EMPTY: bevel_gear_12
+    SKIP EMPTY: marker_blue
+    SKIP EMPTY: marker_red
+
+収集結果:
+  radar_base  = 23 MESH
+  marker_red  = 3 MESH  OK
+  marker_blue = 3 MESH  OK
+  radar_dome  = 21 MESH
+  bevel_gear_12 = 3 MESH  OK
+
+============================================================
+radar_base 共有オフセット計算
+============================================================
+  全baseパーツ統合bbox:
+    X[-259.9, 40.9]  Y[-158.9, 60.9]  Z[-23.9, 135.9] LDU
+  共有オフセット: (109.50, 49.00, 23.90) LDU
+
+============================================================
+radar_base_gray 処理
+============================================================
+  MESHオブジェクト数: 23
+  統合bbox (変換前):
+    X[-259.9, 40.9]  Y[-158.9, 60.9]  Z[-23.9, 135.9] LDU
+  共有オフセット使用: (109.50, 49.00, 23.90) LDU
+  オフセット: (109.50, 49.00, 23.90) LDU
+  Saved: /Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/meshes/radar_base_gray.stl
+  頂点数: 127281  三角面数: 122069
+  MuJoCo Z底面: -0.0440 m  Z上面: 0.0440 m
+  half_Z: 0.0440 m
+
+============================================================
+marker_red 処理
+============================================================
+  MESHオブジェクト数: 3
+  統合bbox (変換前):
+    X[-9.7, 30.1]  Y[-108.9, -29.1]  Z[36.2, 68.0] LDU
+  共有オフセット使用: (109.50, 49.00, 23.90) LDU
+  オフセット: (109.50, 49.00, 23.90) LDU
+  Saved: /Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/meshes/radar_base_red.stl
+  頂点数: 1508  三角面数: 1300
+  MuJoCo Z底面: -0.0080 m  Z上面: 0.0240 m
+  half_Z: 0.0160 m
+
+============================================================
+marker_blue 処理
+============================================================
+  MESHオブジェクト数: 3
+  統合bbox (変換前):
+    X[-209.2, -169.1]  Y[-108.9, -29.1]  Z[36.2, 68.0] LDU
+  共有オフセット使用: (109.50, 49.00, 23.90) LDU
+  オフセット: (109.50, 49.00, 23.90) LDU
+  Saved: /Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/meshes/radar_base_blue.stl
+  頂点数: 1508  三角面数: 1300
+  MuJoCo Z底面: -0.0080 m  Z上面: 0.0240 m
+  half_Z: 0.0160 m
+
+============================================================
+bevel_gear_12 処理
+============================================================
+  MESHオブジェクト数: 3
+  統合bbox (変換前):
+    X[-118.6, -60.8]  Y[-18.3, 39.5]  Z[-24.0, 75.3] LDU
+  rotor_axis_obj: bevel_gear_12
+  旋回軸 (Blender世界座標): (-89.40, 10.58, 35.39) LDU
+  オフセット: (89.40, -10.58, -35.39) LDU
+  Saved: /Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/meshes/bevel_gear_12.stl
+  頂点数: 5996  三角面数: 5458
+  MuJoCo Z底面: -0.0116 m  Z上面: 0.0115 m
+  half_Z: 0.0116 m
+
+============================================================
+radar_dome 処理
+============================================================
+  旋回軸オブジェクト(37316c01.dat): OK
+  MESHオブジェクト数: 21
+  統合bbox (変換前):
+    X[-165.3, -8.0]  Y[-184.5, 45.7]  Z[55.6, 156.0] LDU
+  rotor_axis_obj: 37316c01.dat
+  旋回軸 (Blender世界座標): (-90.61, -28.85, 106.00) LDU
+  オフセット: (90.61, 28.85, -106.00) LDU
+  Saved: /Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/meshes/radar_dome.stl
+  頂点数: 104735  三角面数: 96720
+  MuJoCo Z底面: -0.0298 m  Z上面: 0.0623 m
+  half_Z: 0.0461 m
+  Z軸回転: 180.0°
+
+============================================================
+MJCF pos 値
+============================================================
+  旋回軸モード: モーター位置から dome pos を計算
+  radar_base pos : "0 0 0"
+  radar_dome pos : "-0.0076 -0.0081 0.0520"
+  sonar_site pos : "0 0 0.0200"
+
+--- XML snippet ---
+<body name="radar_base" pos="0 0 0" euler="0 0 0">
+  <inertial pos="0 0 0" mass="1.0" diaginertia="0.01 0.01 0.01"/>
+  <geom name="base_gray_geom" type="mesh" mesh="radar_base_gray_mesh"
+        contype="0" conaffinity="0" rgba="0.366 0.361 0.371 1"/>
+  <geom name="base_red_geom" type="mesh" mesh="radar_base_red_mesh"
+        contype="0" conaffinity="0" rgba="0.578 0.010 0.002 1"/>
+  <geom name="base_blue_geom" type="mesh" mesh="radar_base_blue_mesh"
+        contype="0" conaffinity="0" rgba="0.000 0.089 0.515 1"/>
+</body>
+
+# ログ出力完了: /Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/blender/blender_export_log.txt

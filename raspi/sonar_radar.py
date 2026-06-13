@@ -43,11 +43,9 @@ CONTINUOUS_SPEED  = 7       # 連続スキャン時の速度
 SETTLE_S          = 0.15    # モーター停止後の整定待ち（秒）
 SAMPLE_INTERVAL_S = 0.10    # 連続スキャンのサンプリング間隔（距離センサー更新周期）
 
-# sonar_dome はベベルギア(12T-36T)の噛み合わせ上、Lモーターの機械的0位置で
-# 正面から5度ズレた状態になる。この補正値を加えた位置を論理的な0°（正面）とする。
-SENSOR_HOME_OFFSET = 5
-
 # --- カラー判定 ---
+RED_SAT_MIN  = 40
+RED_VAL_MIN  = 40
 BLUE_HUE_LO  = 210
 BLUE_HUE_HI  = 270
 BLUE_SAT_MIN = 580
@@ -55,6 +53,13 @@ BLUE_VAL_MIN = 100
 
 
 # --- カラー判定 ---
+
+def is_red(hue, sat, val):
+    """赤マーカー判定（hueは色相環の両端付近）"""
+    if sat < RED_SAT_MIN or val < RED_VAL_MIN:
+        return False
+    return hue >= 340 or hue <= 20
+
 
 def is_blue(hue, sat, val):
     """青マーカー判定"""
@@ -77,19 +82,32 @@ def filter_distance(mm):
 
 # --- キャリブレーション ---
 
-def calibrate(hat):
+def calibrate(hat, scan_range):
     """
-    Lモーターを機械的0位置へ移動し、そこから SENSOR_HOME_OFFSET 度だけ
-    旋回してドームを正面に向ける。この位置を0°（正面）とする。
+    反時計回りに回転して赤マーカー（左端）を探し、
+    scan_range度 正方向に戻して0°（正面）を確立する。
     """
-    print("キャリブレーション: 機械的0位置へ移動...", file=sys.stderr)
-    hat.motor_run_to_position(PORT_MOTOR, 0, CALIB_SPEED)
+    print("キャリブレーション: 赤マーカーを探しています...", file=sys.stderr)
+    hat.motor_start(PORT_MOTOR, -CALIB_SPEED)
+    found = False
+    for _ in range(200):    # 最大200×50ms = 10秒
+        hat.sleep(0.05)
+        try:
+            h, s, v = hat.color_read_hsv(PORT_COLOR)
+            if is_red(h, s, v):
+                found = True
+                break
+        except RuntimeError:
+            pass
+    hat.motor_stop(PORT_MOTOR)
     hat.sleep(SETTLE_S)
 
-    print(f"SENSOR_HOME_OFFSET({SENSOR_HOME_OFFSET}度)分を補正...", file=sys.stderr)
-    hat.motor_run_to_position(PORT_MOTOR, SENSOR_HOME_OFFSET, CALIB_SPEED)
-    hat.sleep(SETTLE_S)
+    if not found:
+        raise RuntimeError("赤マーカーが見つかりません。アームを正面付近に戻して再試行してください。")
 
+    print(f"赤マーカー検出。{scan_range}度 正方向に移動して0°へ...", file=sys.stderr)
+    hat.motor_run_for_degrees(PORT_MOTOR, scan_range, CALIB_SPEED)
+    hat.sleep(SETTLE_S)
     zero_pos = hat.motor_get_position(PORT_MOTOR)
     print(f"キャリブレーション完了 (現在位置 = 0°, encoder={zero_pos})", file=sys.stderr)
     return zero_pos
@@ -255,7 +273,7 @@ def main():
         hat.port_config(PORT_DISTANCE, DEVICE_DISTANCE)
         hat.sleep(1.0)
 
-        zero_pos = calibrate(hat)
+        zero_pos = calibrate(hat, args.range)
         if args.mode == "continuous":
             results = do_continuous_scan(hat, args.range, zero_pos)
         else:

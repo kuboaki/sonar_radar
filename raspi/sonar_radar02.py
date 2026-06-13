@@ -42,6 +42,20 @@ SAMPLE_INTERVAL_S = 0.10   # サンプリング間隔（秒）
 # --- ギア比（モーター:dome = 1:3、回転方向反転） ---
 GEAR_RATIO = 3
 
+# sonar_dome はベベルギア(12T-36T)の噛み合わせ上、Lモーターの機械的0位置で
+# 正面から5度ズレた状態になる。この補正値（dome角度）を加えた位置を論理的な0°（正面）とする。
+SENSOR_HOME_OFFSET = 5
+
+
+def dome_to_motor(dome_deg):
+    """dome角度（度）をLモーターのエンコーダ角度（度）に変換する"""
+    return -dome_deg * GEAR_RATIO
+
+
+def motor_to_dome(motor_deg):
+    """Lモーターのエンコーダ角度（度）をdome角度（度）に変換する"""
+    return -motor_deg / GEAR_RATIO
+
 # --- カラー判定 ---
 RED_SAT_MIN  = 40
 RED_VAL_MIN  = 40
@@ -77,24 +91,37 @@ def filter_distance(mm):
     return corrected
 
 
+# --- キャリブレーション ---
+def calibrate(hat, port):
+    """
+    Lモーターを機械的0位置へ移動し、そこから SENSOR_HOME_OFFSET 度
+    （dome角度）だけ旋回してドームを正面に向ける。この位置を0°（正面）とする。
+    """
+    print("キャリブレーション: 機械的0位置へ移動...", file=sys.stderr)
+    hat.motor_run_to_position(port, 0, ALIGN_SPEED)
+    hat.sleep(0.5)
+
+    offset_motor_deg = round(dome_to_motor(SENSOR_HOME_OFFSET))
+    print(f"SENSOR_HOME_OFFSET(dome {SENSOR_HOME_OFFSET}度 = motor {offset_motor_deg}度)分を補正...",
+          file=sys.stderr)
+    hat.motor_run_to_position(port, offset_motor_deg, ALIGN_SPEED)
+    hat.sleep(0.5)
+
+    zero_pos = hat.motor_get_position(port)
+    print(f"キャリブレーション完了 (現在位置 = 0°, encoder={zero_pos})", file=sys.stderr)
+    return zero_pos
+
+
 # --- 0位置への復帰 ---
-def return_to_origin(hat, port):
-    """現在位置から原点(0度)へ戻す"""
-    cur_pos = hat.motor_get_position(port)
-    if cur_pos == 0:
-        return
-
-    print(f"0位置へ復帰: 現在位置 {cur_pos} 度 -> 0 度", file=sys.stderr)
-    hat.motor_run_for_degrees(port, -cur_pos, ALIGN_SPEED)
-
-    dur = (abs(cur_pos) / 360.0) / (ALIGN_SPEED * 0.05)
-    if dur < 0.5:
-        dur = 0.5
-    hat.sleep(dur + 0.5)
+def return_to_origin(hat, port, zero_pos):
+    """現在位置からzero_pos（dome 0°）へ戻す"""
+    print(f"0位置へ復帰: zero_pos={zero_pos}", file=sys.stderr)
+    hat.motor_run_to_position(port, zero_pos, ALIGN_SPEED)
+    hat.sleep(0.5)
 
 
 # --- 連続スキャン ---
-def do_continuous_scan(hat):
+def do_continuous_scan(hat, zero_pos):
     """
     PWMで旋回しながら SAMPLE_INTERVAL_S ごとに角度と距離を記録する。
     赤・青マーカーを検出するたびに旋回方向を反転し、
@@ -126,8 +153,8 @@ def do_continuous_scan(hat):
 
         # 角度・距離を記録
         try:
-            angle = hat.motor_get_position(PORT_MOTOR)
-            dome_angle = -angle / GEAR_RATIO
+            angle = hat.motor_get_position(PORT_MOTOR) - zero_pos
+            dome_angle = motor_to_dome(angle)
         except RuntimeError:
             angle = None
             dome_angle = None
@@ -176,11 +203,11 @@ def main():
         hat.port_config(PORT_DISTANCE, DEVICE_DISTANCE)
         hat.sleep(1.0)
 
-        return_to_origin(hat, PORT_MOTOR)
+        zero_pos = calibrate(hat, PORT_MOTOR)
 
-        results = do_continuous_scan(hat)
+        results = do_continuous_scan(hat, zero_pos)
 
-        return_to_origin(hat, PORT_MOTOR)
+        return_to_origin(hat, PORT_MOTOR, zero_pos)
 
     print(json.dumps(results, ensure_ascii=False, indent=2))
 

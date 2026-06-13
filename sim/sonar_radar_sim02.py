@@ -142,6 +142,8 @@ else:
             mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "dome_joint")]
         _press_aid = mujoco.mj_name2id(
             _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "press_ctrl")
+        _press_qadr = _mdl.jnt_qposadr[
+            mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "press_slide")]
 
         # sonar_radar02.py 実行中に生成される SpikeHat インスタンスを受け取る
         _hat_holder = []
@@ -169,6 +171,13 @@ else:
                             _dat.qpos[_dome_qadr]  = -_motor_rad / 3.0
                             _dat.qvel[_motor_qadr] = 0.0
                             _dat.qvel[_dome_qadr]  = 0.0
+                        except RuntimeError:
+                            pass
+
+                        # 終了スイッチ(press_body)の位置を表示用に反映
+                        try:
+                            _dat.qpos[_press_qadr] = _hat.sim_get_qpos(_press_qadr)
+                            _dat.qvel[_press_qadr] = 0.0
                         except RuntimeError:
                             pass
 

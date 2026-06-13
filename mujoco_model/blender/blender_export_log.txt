@@ -137,26 +137,30 @@ bevel_gear_12 処理
 ============================================================
 radar_dome 処理
 ============================================================
-  旋回軸オブジェクト(37316c01.dat): OK
+  旋回軸オブジェクト(32498.dat = 36Tベベルギア): OK
   MESHオブジェクト数: 21
   統合bbox (変換前):
     X[-165.3, -8.0]  Y[-184.5, 45.7]  Z[55.6, 156.0] LDU
-  rotor_axis_obj: 37316c01.dat
-  旋回軸 (Blender世界座標): (-90.61, -28.85, 106.00) LDU
-  オフセット: (90.61, 28.85, -106.00) LDU
+  rotor_axis_obj: 32498.dat
+  旋回軸 (Blender世界座標): (-88.69, -50.77, 65.54) LDU
+  オフセット: (88.69, 50.77, -65.54) LDU
   Saved: /Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/meshes/radar_dome.stl
   頂点数: 104735  三角面数: 96720
-  MuJoCo Z底面: -0.0298 m  Z上面: 0.0623 m
+  MuJoCo Z底面: -0.0386 m  Z上面: 0.0535 m
   half_Z: 0.0461 m
   Z軸回転: 180.0°
+
+  -- センサー site pos（radar_dome ローカル座標）--
+  <site name="sonar_site" pos="-0.0008 0.0088 0.0162" size="0.01" rgba="1 0 0 1"/>
+  <site name="color_site" pos="0.0035 -0.0398 0.0322" size="0.01" rgba="1 1 0 1"/>
 
 ============================================================
 MJCF pos 値
 ============================================================
   旋回軸モード: モーター位置から dome pos を計算
   radar_base pos : "0 0 0"
-  radar_dome pos : "-0.0076 -0.0081 0.0520"
-  sonar_site pos : "0 0 0.0200"
+  radar_dome pos : "-0.0083 0.0007 0.0358"
+  sonar_site pos : "0 0 0.0362"
 
 --- XML snippet ---
 <body name="radar_base" pos="0 0 0" euler="0 0 0">

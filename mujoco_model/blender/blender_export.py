@@ -349,8 +349,8 @@ print("\n" + "=" * 60)
 print("radar_dome 処理")
 print("=" * 60)
 
-rotor_axis_obj = bpy.data.objects.get("37316c01.dat")
-print(f"  旋回軸オブジェクト(37316c01.dat): {'OK' if rotor_axis_obj else 'NOT FOUND → center にフォールバック'}")
+rotor_axis_obj = bpy.data.objects.get("32498.dat")
+print(f"  旋回軸オブジェクト(32498.dat = 36Tベベルギア): {'OK' if rotor_axis_obj else 'NOT FOUND → center にフォールバック'}")
 
 dome_result = export_stl(
     meshes         = dome_meshes,
@@ -364,11 +364,14 @@ dome_result = export_stl(
 # センサー取り付け位置（dome ローカル座標、MJCF site pos）
 if rotor_axis_obj:
     print("\n  -- センサー site pos（radar_dome ローカル座標）--")
-    sonar_obj = rotor_axis_obj  # 37316c01.dat = 距離センサー = 旋回軸そのもの
+    sonar_obj = bpy.data.objects.get("37316c01.dat")  # 距離センサー
     color_obj = bpy.data.objects.get("37308c01.dat")  # カラーセンサー
 
-    sx, sy, sz = compute_local_site_pos(sonar_obj, rotor_axis_obj, 180.0)
-    print(f'  <site name="sonar_site" pos="{sx:.4f} {sy:.4f} {sz:.4f}" size="0.01" rgba="1 0 0 1"/>')
+    if sonar_obj:
+        sx, sy, sz = compute_local_site_pos(sonar_obj, rotor_axis_obj, 180.0)
+        print(f'  <site name="sonar_site" pos="{sx:.4f} {sy:.4f} {sz:.4f}" size="0.01" rgba="1 0 0 1"/>')
+    else:
+        print("  WARNING: 37316c01.dat (距離センサー) が見つかりません")
 
     if color_obj:
         cx_, cy_, cz_ = compute_local_site_pos(color_obj, rotor_axis_obj, 180.0)

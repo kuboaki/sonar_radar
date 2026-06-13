@@ -18,7 +18,11 @@ sonar_radar02.py - レーダースキャナー（PWM旋回・マーカー反転�
 
 import sys
 import json
+import time
 sys.path.insert(0, '/home/kuboaki/projects/libspikehat/python')
+
+# --- 起動時刻（経過時間ログ用） ---
+START_TIME = time.monotonic()
 
 from spikehat import SpikeHat, DEVICE_MOTOR_L, DEVICE_FORCE, DEVICE_COLOR, DEVICE_DISTANCE
 
@@ -168,7 +172,8 @@ def do_continuous_scan(hat, zero_pos):
         label = f"{dist:5d} mm" if dist is not None else " null"
         angle_label = f"{angle:+4d}" if angle is not None else "  --"
         dome_label = f"{dome_angle:+6.1f}" if dome_angle is not None else "    --"
-        print(f"  motor:{angle_label}° dome:{dome_label}° -> {label}", file=sys.stderr)
+        elapsed = time.monotonic() - START_TIME
+        print(f"[{elapsed:6.2f}s] motor:{angle_label}° dome:{dome_label}° -> {label}", file=sys.stderr)
 
         # フォースセンサー押下で終了
         try:

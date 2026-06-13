@@ -43,37 +43,35 @@
       <geom name="base_blue_geom" type="mesh" mesh="radar_base_blue_mesh"
             contype="0" conaffinity="0" rgba="0.000 0.089 0.515 1"/>
 
-      <!-- bevel_gear_12 (12T, motor軸側): 配置確認用、仮にradar_base直下に固定配置 -->
-      <body name="bevel_gear_12" pos="-0.0080 -0.0238 0.0237" euler="0 0 0">
+      <!-- モーターローター（旋回、12Tベベルギアを保持）。
+           メッシュは libspikehat_sim/examples/test_motor.xml 側へ移動済み。
+           sonar_radar07側のモーター本体表現は別途検討する。 -->
+      <body name="motor_rotor" pos="-0.0080 -0.0238 0.0237" euler="0 0 0">
+        <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
+        <joint name="motor_joint" type="hinge" axis="0 0 1"
+               damping="0.55" armature="0.001"/>
         <geom name="bevel_gear_12_geom" type="mesh" mesh="bevel_gear_12_mesh"
               contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>
       </body>
 
-      <!-- モーターボディ（固定）: メッシュは libspikehat_sim/examples/test_motor.xml 側へ移動済み。
-           sonar_radar07側のモーター表現は別途検討する。 -->
-      <body name="motor_body" pos="0.0076 0.0004 0.0" euler="0 0 0">
+      <!-- ドーム（36Tベベルギアを保持、motor_rotorとはギア比1:3・回転方向反転で連動） -->
+      <body name="radar_dome" pos="-0.0076 -0.0081 0.0520" euler="0 0 180">
         <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
-
-        <!-- モーターローター（旋回） -->
-        <body name="motor_rotor" pos="0.0001 0.0239 0.0160" euler="0 0 0">
-          <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
-          <joint name="motor_joint" type="hinge" axis="0 0 1"
-                 damping="0.55" armature="0.001"/>
-
-          <!-- dome（rotorに従属） -->
-          <body name="radar_dome" pos="0 0.008 0.028" euler="0 0 180">
-            <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
-            <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
-                  contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>
-            <site name="sonar_site" pos="0 -0.016 0.000" size="0.01" rgba="1 0 0 1"/>
-            <site name="color_site" pos="0 0.048 0.008" size="0.01" rgba="1 1 0 1"/>
-          </body>
-
-        </body>
+        <joint name="dome_joint" type="hinge" axis="0 0 1"
+               damping="0.1" armature="0.0005"/>
+        <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
+              contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>
+        <site name="sonar_site" pos="0 0.008 0" size="0.01" rgba="1 0 0 1"/>
+        <site name="color_site" pos="0.0043 -0.0486 0.0080" size="0.01" rgba="1 1 0 1"/>
       </body>
 
     </body>
   </worldbody>
+
+  <equality>
+    <!-- ベベルギア(12T-36T)噛み合い: dome_joint = -motor_joint / 3 -->
+    <joint joint1="dome_joint" joint2="motor_joint" polycoef="0 -0.33333333 0 0 0"/>
+  </equality>
 
   <actuator>
     <motor name="turret_motor" joint="motor_joint"
@@ -84,6 +82,8 @@
     <!-- 旋回角度・角速度 -->
     <jointpos  name="turret_angle" joint="motor_joint"/>
     <jointvel  name="turret_vel"   joint="motor_joint"/>
+    <jointpos  name="dome_angle"   joint="dome_joint"/>
+    <jointvel  name="dome_vel"     joint="dome_joint"/>
     <!-- センサー位置・姿勢（ソナー取り付け面） -->
     <framepos  name="sonar_pos"  objtype="site" objname="sonar_site"/>
     <framequat name="sonar_quat" objtype="site" objname="sonar_site"/>

@@ -41,7 +41,7 @@ DIST_OFFSET_MM = 25      # センサー面が旋回軸より前方にある分�
 # --- モーター設定（PWM） ---
 SCAN_PWM          = 0.1    # 旋回速度（デューティ比）
 ALIGN_SPEED       = 10     # return_to_origin 時の速度
-SAMPLE_INTERVAL_S = 0.10   # サンプリング間隔（秒）
+SAMPLE_INTERVAL_S = 0.20   # サンプリング間隔（秒）
 
 # --- ギア比（モーター:dome = 1:3、回転方向反転） ---
 GEAR_RATIO = 3

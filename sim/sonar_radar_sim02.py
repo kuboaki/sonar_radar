@@ -131,6 +131,11 @@ else:
     _mdl = mujoco.MjModel.from_xml_path(_xml_path)
     _dat = mujoco.MjData(_mdl)
 
+    # 初期カメラ表示範囲: floor(2m四方)を含む全体の寸法ではなく、
+    # レーダー本体(数cm)を基準にして拡大表示する
+    _mdl.stat.center[:] = [0.0, -0.02, 0.03]
+    _mdl.stat.extent = 0.12
+
     # mjpython かどうか判定
     _IS_MJPYTHON = getattr(mujoco.viewer, '_MJPYTHON', None) is not None
 
@@ -165,6 +170,13 @@ else:
             物理計算（mj_step）は行わない。
             """
             with mujoco.viewer.launch_passive(_mdl, _dat) as viewer:
+                # floor(2m四方)込みの自動フィットだと小さく表示されるため、
+                # レーダー本体(数cm)を基準にカメラを寄せる
+                viewer.cam.lookat[:] = _mdl.stat.center
+                viewer.cam.distance  = _mdl.stat.extent * 2.5
+                viewer.cam.azimuth   = 180.0
+                viewer.cam.elevation = -30.0
+
                 while viewer.is_running():
                     if _hat_holder:
                         _hat = _hat_holder[0]

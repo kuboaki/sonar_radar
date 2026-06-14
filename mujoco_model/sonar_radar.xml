@@ -28,14 +28,14 @@
 
     <!-- 障害物: ソナーの計測範囲内（正面付近、約120mm）に配置。
          wall_x / wall_y で水平面内を移動可能（向きは固定）。 -->
-    <body name="wall_body" pos="0.0037 -0.1203 0.06">
+    <body name="wall_body" pos="0.0037 -0.1203 0.04">
       <joint name="wall_x" type="slide" axis="1 0 0" range="-0.06 0.06" damping="5.0"/>
       <joint name="wall_y" type="slide" axis="0 1 0" range="-0.05 0.10" damping="5.0"/>
       <inertial pos="0 0 0" mass="0.05" diaginertia="0.0001 0.0001 0.0001"/>
-      <!-- 実機の壁: 幅48mm(6ポッチ)×高さ120mm(15ポッチ)、厚さは無視 -->
+      <!-- 実機の壁: 幅48mm(6ポッチ)×高さ80mm(10ポッチ)、厚さは無視 -->
       <geom name="wall" type="box"
-            size="0.024 0.005 0.06"
-            rgba="0.8 0.8 0.2 1"
+            size="0.024 0.005 0.04"
+            rgba="0.8 0.8 0.2 0.3"
             contype="1" conaffinity="1"/>
     </body>
 
@@ -63,7 +63,7 @@
       <!-- ドーム（36Tベベルギアを保持、motor_rotorとはギア比1:3・回転方向反転で連動） -->
       <body name="radar_dome" pos="-0.0083 0.0007 0.0358" euler="0 0 180">
         <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
-        <joint name="dome_joint" type="hinge" axis="0 0 1"
+        <joint name="dome_joint" type="hinge" axis="0 0 -1"
                damping="0.1" armature="0.0005"/>
         <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
               contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>

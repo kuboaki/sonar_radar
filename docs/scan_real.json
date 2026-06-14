@@ -1,0 +1,2742 @@
+[
+  {
+    "angle": 0,
+    "dome_angle": 0.0,
+    "distance_mm": 108
+  },
+  {
+    "angle": 0,
+    "dome_angle": 0.0,
+    "distance_mm": 108
+  },
+  {
+    "angle": 0,
+    "dome_angle": 0.0,
+    "distance_mm": 108
+  },
+  {
+    "angle": 1,
+    "dome_angle": -0.3333333333333333,
+    "distance_mm": 108
+  },
+  {
+    "angle": 4,
+    "dome_angle": -1.3333333333333333,
+    "distance_mm": 108
+  },
+  {
+    "angle": 8,
+    "dome_angle": -2.6666666666666665,
+    "distance_mm": 105
+  },
+  {
+    "angle": 11,
+    "dome_angle": -3.6666666666666665,
+    "distance_mm": 104
+  },
+  {
+    "angle": 13,
+    "dome_angle": -4.333333333333333,
+    "distance_mm": 104
+  },
+  {
+    "angle": 16,
+    "dome_angle": -5.333333333333333,
+    "distance_mm": 104
+  },
+  {
+    "angle": 20,
+    "dome_angle": -6.666666666666667,
+    "distance_mm": 104
+  },
+  {
+    "angle": 23,
+    "dome_angle": -7.666666666666667,
+    "distance_mm": 104
+  },
+  {
+    "angle": 26,
+    "dome_angle": -8.666666666666666,
+    "distance_mm": 104
+  },
+  {
+    "angle": 29,
+    "dome_angle": -9.666666666666666,
+    "distance_mm": 104
+  },
+  {
+    "angle": 32,
+    "dome_angle": -10.666666666666666,
+    "distance_mm": 104
+  },
+  {
+    "angle": 35,
+    "dome_angle": -11.666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": 38,
+    "dome_angle": -12.666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": 43,
+    "dome_angle": -14.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": 48,
+    "dome_angle": -16.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 51,
+    "dome_angle": -17.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 55,
+    "dome_angle": -18.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 58,
+    "dome_angle": -19.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 61,
+    "dome_angle": -20.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 65,
+    "dome_angle": -21.666666666666668,
+    "distance_mm": 106
+  },
+  {
+    "angle": 68,
+    "dome_angle": -22.666666666666668,
+    "distance_mm": 106
+  },
+  {
+    "angle": 70,
+    "dome_angle": -23.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 71,
+    "dome_angle": -23.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": 73,
+    "dome_angle": -24.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 75,
+    "dome_angle": -25.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": 79,
+    "dome_angle": -26.333333333333332,
+    "distance_mm": 108
+  },
+  {
+    "angle": 82,
+    "dome_angle": -27.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 85,
+    "dome_angle": -28.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 88,
+    "dome_angle": -29.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 92,
+    "dome_angle": -30.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": 93,
+    "dome_angle": -31.0,
+    "distance_mm": 108
+  },
+  {
+    "angle": 95,
+    "dome_angle": -31.666666666666668,
+    "distance_mm": 111
+  },
+  {
+    "angle": 98,
+    "dome_angle": -32.666666666666664,
+    "distance_mm": 116
+  },
+  {
+    "angle": 101,
+    "dome_angle": -33.666666666666664,
+    "distance_mm": 128
+  },
+  {
+    "angle": 104,
+    "dome_angle": -34.666666666666664,
+    "distance_mm": 128
+  },
+  {
+    "angle": 106,
+    "dome_angle": -35.333333333333336,
+    "distance_mm": 128
+  },
+  {
+    "angle": 110,
+    "dome_angle": -36.666666666666664,
+    "distance_mm": 128
+  },
+  {
+    "angle": 112,
+    "dome_angle": -37.333333333333336,
+    "distance_mm": 128
+  },
+  {
+    "angle": 114,
+    "dome_angle": -38.0,
+    "distance_mm": 185
+  },
+  {
+    "angle": 117,
+    "dome_angle": -39.0,
+    "distance_mm": 173
+  },
+  {
+    "angle": 118,
+    "dome_angle": -39.333333333333336,
+    "distance_mm": 181
+  },
+  {
+    "angle": 122,
+    "dome_angle": -40.666666666666664,
+    "distance_mm": 181
+  },
+  {
+    "angle": 125,
+    "dome_angle": -41.666666666666664,
+    "distance_mm": 181
+  },
+  {
+    "angle": 127,
+    "dome_angle": -42.333333333333336,
+    "distance_mm": 181
+  },
+  {
+    "angle": 130,
+    "dome_angle": -43.333333333333336,
+    "distance_mm": 181
+  },
+  {
+    "angle": 132,
+    "dome_angle": -44.0,
+    "distance_mm": 181
+  },
+  {
+    "angle": 135,
+    "dome_angle": -45.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 139,
+    "dome_angle": -46.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 139,
+    "dome_angle": -46.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 141,
+    "dome_angle": -47.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 142,
+    "dome_angle": -47.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 144,
+    "dome_angle": -48.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 147,
+    "dome_angle": -49.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 147,
+    "dome_angle": -49.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 149,
+    "dome_angle": -49.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 149,
+    "dome_angle": -49.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 151,
+    "dome_angle": -50.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 153,
+    "dome_angle": -51.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 154,
+    "dome_angle": -51.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 156,
+    "dome_angle": -52.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 158,
+    "dome_angle": -52.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 160,
+    "dome_angle": -53.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 161,
+    "dome_angle": -53.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 163,
+    "dome_angle": -54.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 166,
+    "dome_angle": -55.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 168,
+    "dome_angle": -56.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 169,
+    "dome_angle": -56.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 172,
+    "dome_angle": -57.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 172,
+    "dome_angle": -57.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 170,
+    "dome_angle": -56.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 167,
+    "dome_angle": -55.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 164,
+    "dome_angle": -54.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 161,
+    "dome_angle": -53.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 158,
+    "dome_angle": -52.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 155,
+    "dome_angle": -51.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 152,
+    "dome_angle": -50.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 148,
+    "dome_angle": -49.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 144,
+    "dome_angle": -48.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 139,
+    "dome_angle": -46.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 135,
+    "dome_angle": -45.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 131,
+    "dome_angle": -43.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 126,
+    "dome_angle": -42.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 122,
+    "dome_angle": -40.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 118,
+    "dome_angle": -39.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 114,
+    "dome_angle": -38.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 109,
+    "dome_angle": -36.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 104,
+    "dome_angle": -34.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 99,
+    "dome_angle": -33.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 93,
+    "dome_angle": -31.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 89,
+    "dome_angle": -29.666666666666668,
+    "distance_mm": 116
+  },
+  {
+    "angle": 83,
+    "dome_angle": -27.666666666666668,
+    "distance_mm": 112
+  },
+  {
+    "angle": 78,
+    "dome_angle": -26.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": 74,
+    "dome_angle": -24.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": 69,
+    "dome_angle": -23.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": 64,
+    "dome_angle": -21.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 60,
+    "dome_angle": -20.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 56,
+    "dome_angle": -18.666666666666668,
+    "distance_mm": 106
+  },
+  {
+    "angle": 53,
+    "dome_angle": -17.666666666666668,
+    "distance_mm": 106
+  },
+  {
+    "angle": 47,
+    "dome_angle": -15.666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": 43,
+    "dome_angle": -14.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": 40,
+    "dome_angle": -13.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": 37,
+    "dome_angle": -12.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": 34,
+    "dome_angle": -11.333333333333334,
+    "distance_mm": 102
+  },
+  {
+    "angle": 30,
+    "dome_angle": -10.0,
+    "distance_mm": 102
+  },
+  {
+    "angle": 27,
+    "dome_angle": -9.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": 24,
+    "dome_angle": -8.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": 21,
+    "dome_angle": -7.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": 18,
+    "dome_angle": -6.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": 16,
+    "dome_angle": -5.333333333333333,
+    "distance_mm": 105
+  },
+  {
+    "angle": 14,
+    "dome_angle": -4.666666666666667,
+    "distance_mm": 105
+  },
+  {
+    "angle": 13,
+    "dome_angle": -4.333333333333333,
+    "distance_mm": 105
+  },
+  {
+    "angle": 11,
+    "dome_angle": -3.6666666666666665,
+    "distance_mm": 105
+  },
+  {
+    "angle": 7,
+    "dome_angle": -2.3333333333333335,
+    "distance_mm": 105
+  },
+  {
+    "angle": 3,
+    "dome_angle": -1.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": 0,
+    "dome_angle": 0.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": -2,
+    "dome_angle": 0.6666666666666666,
+    "distance_mm": 105
+  },
+  {
+    "angle": -5,
+    "dome_angle": 1.6666666666666667,
+    "distance_mm": 106
+  },
+  {
+    "angle": -10,
+    "dome_angle": 3.3333333333333335,
+    "distance_mm": 110
+  },
+  {
+    "angle": -13,
+    "dome_angle": 4.333333333333333,
+    "distance_mm": 110
+  },
+  {
+    "angle": -15,
+    "dome_angle": 5.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -17,
+    "dome_angle": 5.666666666666667,
+    "distance_mm": 106
+  },
+  {
+    "angle": -20,
+    "dome_angle": 6.666666666666667,
+    "distance_mm": 106
+  },
+  {
+    "angle": -24,
+    "dome_angle": 8.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -26,
+    "dome_angle": 8.666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": -29,
+    "dome_angle": 9.666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": -30,
+    "dome_angle": 10.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -33,
+    "dome_angle": 11.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -36,
+    "dome_angle": 12.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -38,
+    "dome_angle": 12.666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": -41,
+    "dome_angle": 13.666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": -43,
+    "dome_angle": 14.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": -46,
+    "dome_angle": 15.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": -50,
+    "dome_angle": 16.666666666666668,
+    "distance_mm": 106
+  },
+  {
+    "angle": -54,
+    "dome_angle": 18.0,
+    "distance_mm": 103
+  },
+  {
+    "angle": -57,
+    "dome_angle": 19.0,
+    "distance_mm": 103
+  },
+  {
+    "angle": -59,
+    "dome_angle": 19.666666666666668,
+    "distance_mm": 103
+  },
+  {
+    "angle": -61,
+    "dome_angle": 20.333333333333332,
+    "distance_mm": 103
+  },
+  {
+    "angle": -64,
+    "dome_angle": 21.333333333333332,
+    "distance_mm": 103
+  },
+  {
+    "angle": -67,
+    "dome_angle": 22.333333333333332,
+    "distance_mm": 103
+  },
+  {
+    "angle": -69,
+    "dome_angle": 23.0,
+    "distance_mm": 103
+  },
+  {
+    "angle": -70,
+    "dome_angle": 23.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": -71,
+    "dome_angle": 23.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": -73,
+    "dome_angle": 24.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": -75,
+    "dome_angle": 25.0,
+    "distance_mm": 112
+  },
+  {
+    "angle": -76,
+    "dome_angle": 25.333333333333332,
+    "distance_mm": 112
+  },
+  {
+    "angle": -79,
+    "dome_angle": 26.333333333333332,
+    "distance_mm": 112
+  },
+  {
+    "angle": -80,
+    "dome_angle": 26.666666666666668,
+    "distance_mm": 116
+  },
+  {
+    "angle": -82,
+    "dome_angle": 27.333333333333332,
+    "distance_mm": 116
+  },
+  {
+    "angle": -86,
+    "dome_angle": 28.666666666666668,
+    "distance_mm": 121
+  },
+  {
+    "angle": -88,
+    "dome_angle": 29.333333333333332,
+    "distance_mm": 125
+  },
+  {
+    "angle": -89,
+    "dome_angle": 29.666666666666668,
+    "distance_mm": 125
+  },
+  {
+    "angle": -91,
+    "dome_angle": 30.333333333333332,
+    "distance_mm": 125
+  },
+  {
+    "angle": -93,
+    "dome_angle": 31.0,
+    "distance_mm": 133
+  },
+  {
+    "angle": -94,
+    "dome_angle": 31.333333333333332,
+    "distance_mm": 133
+  },
+  {
+    "angle": -96,
+    "dome_angle": 32.0,
+    "distance_mm": 133
+  },
+  {
+    "angle": -98,
+    "dome_angle": 32.666666666666664,
+    "distance_mm": 133
+  },
+  {
+    "angle": -100,
+    "dome_angle": 33.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -101,
+    "dome_angle": 33.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -103,
+    "dome_angle": 34.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -104,
+    "dome_angle": 34.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -108,
+    "dome_angle": 36.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -112,
+    "dome_angle": 37.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -113,
+    "dome_angle": 37.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -115,
+    "dome_angle": 38.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -118,
+    "dome_angle": 39.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -121,
+    "dome_angle": 40.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -124,
+    "dome_angle": 41.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -126,
+    "dome_angle": 42.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -129,
+    "dome_angle": 43.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -133,
+    "dome_angle": 44.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -136,
+    "dome_angle": 45.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -138,
+    "dome_angle": 46.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -141,
+    "dome_angle": 47.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -144,
+    "dome_angle": 48.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -147,
+    "dome_angle": 49.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -149,
+    "dome_angle": 49.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -152,
+    "dome_angle": 50.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -154,
+    "dome_angle": 51.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -156,
+    "dome_angle": 52.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -159,
+    "dome_angle": 53.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -160,
+    "dome_angle": 53.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -162,
+    "dome_angle": 54.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -164,
+    "dome_angle": 54.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -167,
+    "dome_angle": 55.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -167,
+    "dome_angle": 55.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -165,
+    "dome_angle": 55.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -160,
+    "dome_angle": 53.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -157,
+    "dome_angle": 52.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -151,
+    "dome_angle": 50.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -147,
+    "dome_angle": 49.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -143,
+    "dome_angle": 47.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -138,
+    "dome_angle": 46.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -134,
+    "dome_angle": 44.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -130,
+    "dome_angle": 43.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -125,
+    "dome_angle": 41.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -121,
+    "dome_angle": 40.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -117,
+    "dome_angle": 39.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -114,
+    "dome_angle": 38.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -111,
+    "dome_angle": 37.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -106,
+    "dome_angle": 35.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -102,
+    "dome_angle": 34.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -98,
+    "dome_angle": 32.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -95,
+    "dome_angle": 31.666666666666668,
+    "distance_mm": 129
+  },
+  {
+    "angle": -91,
+    "dome_angle": 30.333333333333332,
+    "distance_mm": 125
+  },
+  {
+    "angle": -87,
+    "dome_angle": 29.0,
+    "distance_mm": 125
+  },
+  {
+    "angle": -83,
+    "dome_angle": 27.666666666666668,
+    "distance_mm": 121
+  },
+  {
+    "angle": -80,
+    "dome_angle": 26.666666666666668,
+    "distance_mm": 116
+  },
+  {
+    "angle": -74,
+    "dome_angle": 24.666666666666668,
+    "distance_mm": 112
+  },
+  {
+    "angle": -71,
+    "dome_angle": 23.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": -66,
+    "dome_angle": 22.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": -63,
+    "dome_angle": 21.0,
+    "distance_mm": 103
+  },
+  {
+    "angle": -59,
+    "dome_angle": 19.666666666666668,
+    "distance_mm": 103
+  },
+  {
+    "angle": -53,
+    "dome_angle": 17.666666666666668,
+    "distance_mm": 103
+  },
+  {
+    "angle": -49,
+    "dome_angle": 16.333333333333332,
+    "distance_mm": 103
+  },
+  {
+    "angle": -43,
+    "dome_angle": 14.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": -40,
+    "dome_angle": 13.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": -36,
+    "dome_angle": 12.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -30,
+    "dome_angle": 10.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -26,
+    "dome_angle": 8.666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": -22,
+    "dome_angle": 7.333333333333333,
+    "distance_mm": 106
+  },
+  {
+    "angle": -19,
+    "dome_angle": 6.333333333333333,
+    "distance_mm": 106
+  },
+  {
+    "angle": -14,
+    "dome_angle": 4.666666666666667,
+    "distance_mm": 106
+  },
+  {
+    "angle": -9,
+    "dome_angle": 3.0,
+    "distance_mm": 110
+  },
+  {
+    "angle": -5,
+    "dome_angle": 1.6666666666666667,
+    "distance_mm": 110
+  },
+  {
+    "angle": -1,
+    "dome_angle": 0.3333333333333333,
+    "distance_mm": 110
+  },
+  {
+    "angle": 2,
+    "dome_angle": -0.6666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": 8,
+    "dome_angle": -2.6666666666666665,
+    "distance_mm": 105
+  },
+  {
+    "angle": 12,
+    "dome_angle": -4.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": 15,
+    "dome_angle": -5.0,
+    "distance_mm": 104
+  },
+  {
+    "angle": 19,
+    "dome_angle": -6.333333333333333,
+    "distance_mm": 104
+  },
+  {
+    "angle": 23,
+    "dome_angle": -7.666666666666667,
+    "distance_mm": 105
+  },
+  {
+    "angle": 25,
+    "dome_angle": -8.333333333333334,
+    "distance_mm": 105
+  },
+  {
+    "angle": 28,
+    "dome_angle": -9.333333333333334,
+    "distance_mm": 102
+  },
+  {
+    "angle": 31,
+    "dome_angle": -10.333333333333334,
+    "distance_mm": 102
+  },
+  {
+    "angle": 35,
+    "dome_angle": -11.666666666666666,
+    "distance_mm": 102
+  },
+  {
+    "angle": 39,
+    "dome_angle": -13.0,
+    "distance_mm": 102
+  },
+  {
+    "angle": 42,
+    "dome_angle": -14.0,
+    "distance_mm": 102
+  },
+  {
+    "angle": 43,
+    "dome_angle": -14.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": 46,
+    "dome_angle": -15.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": 49,
+    "dome_angle": -16.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 52,
+    "dome_angle": -17.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 54,
+    "dome_angle": -18.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 57,
+    "dome_angle": -19.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 60,
+    "dome_angle": -20.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 62,
+    "dome_angle": -20.666666666666668,
+    "distance_mm": 106
+  },
+  {
+    "angle": 66,
+    "dome_angle": -22.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 68,
+    "dome_angle": -22.666666666666668,
+    "distance_mm": 106
+  },
+  {
+    "angle": 71,
+    "dome_angle": -23.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": 75,
+    "dome_angle": -25.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": 80,
+    "dome_angle": -26.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": 84,
+    "dome_angle": -28.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": 87,
+    "dome_angle": -29.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": 91,
+    "dome_angle": -30.333333333333332,
+    "distance_mm": 111
+  },
+  {
+    "angle": 95,
+    "dome_angle": -31.666666666666668,
+    "distance_mm": 116
+  },
+  {
+    "angle": 99,
+    "dome_angle": -33.0,
+    "distance_mm": 120
+  },
+  {
+    "angle": 101,
+    "dome_angle": -33.666666666666664,
+    "distance_mm": 120
+  },
+  {
+    "angle": 103,
+    "dome_angle": -34.333333333333336,
+    "distance_mm": 120
+  },
+  {
+    "angle": 106,
+    "dome_angle": -35.333333333333336,
+    "distance_mm": 120
+  },
+  {
+    "angle": 107,
+    "dome_angle": -35.666666666666664,
+    "distance_mm": 120
+  },
+  {
+    "angle": 109,
+    "dome_angle": -36.333333333333336,
+    "distance_mm": 120
+  },
+  {
+    "angle": 110,
+    "dome_angle": -36.666666666666664,
+    "distance_mm": 120
+  },
+  {
+    "angle": 116,
+    "dome_angle": -38.666666666666664,
+    "distance_mm": 120
+  },
+  {
+    "angle": 119,
+    "dome_angle": -39.666666666666664,
+    "distance_mm": 120
+  },
+  {
+    "angle": 121,
+    "dome_angle": -40.333333333333336,
+    "distance_mm": 120
+  },
+  {
+    "angle": 122,
+    "dome_angle": -40.666666666666664,
+    "distance_mm": 120
+  },
+  {
+    "angle": 126,
+    "dome_angle": -42.0,
+    "distance_mm": 120
+  },
+  {
+    "angle": 129,
+    "dome_angle": -43.0,
+    "distance_mm": 120
+  },
+  {
+    "angle": 130,
+    "dome_angle": -43.333333333333336,
+    "distance_mm": 120
+  },
+  {
+    "angle": 132,
+    "dome_angle": -44.0,
+    "distance_mm": 120
+  },
+  {
+    "angle": 134,
+    "dome_angle": -44.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 137,
+    "dome_angle": -45.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 140,
+    "dome_angle": -46.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 142,
+    "dome_angle": -47.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 145,
+    "dome_angle": -48.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 148,
+    "dome_angle": -49.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 149,
+    "dome_angle": -49.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 150,
+    "dome_angle": -50.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 151,
+    "dome_angle": -50.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 154,
+    "dome_angle": -51.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 157,
+    "dome_angle": -52.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 158,
+    "dome_angle": -52.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 160,
+    "dome_angle": -53.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 161,
+    "dome_angle": -53.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 165,
+    "dome_angle": -55.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 168,
+    "dome_angle": -56.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 169,
+    "dome_angle": -56.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 169,
+    "dome_angle": -56.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 167,
+    "dome_angle": -55.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 165,
+    "dome_angle": -55.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 162,
+    "dome_angle": -54.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 160,
+    "dome_angle": -53.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 164,
+    "dome_angle": -54.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 166,
+    "dome_angle": -55.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 167,
+    "dome_angle": -55.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 167,
+    "dome_angle": -55.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 166,
+    "dome_angle": -55.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 163,
+    "dome_angle": -54.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 162,
+    "dome_angle": -54.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 165,
+    "dome_angle": -55.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 168,
+    "dome_angle": -56.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 169,
+    "dome_angle": -56.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 170,
+    "dome_angle": -56.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 172,
+    "dome_angle": -57.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 172,
+    "dome_angle": -57.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 168,
+    "dome_angle": -56.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 166,
+    "dome_angle": -55.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 163,
+    "dome_angle": -54.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 158,
+    "dome_angle": -52.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 154,
+    "dome_angle": -51.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 151,
+    "dome_angle": -50.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 147,
+    "dome_angle": -49.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 143,
+    "dome_angle": -47.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 139,
+    "dome_angle": -46.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 135,
+    "dome_angle": -45.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 131,
+    "dome_angle": -43.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 127,
+    "dome_angle": -42.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 122,
+    "dome_angle": -40.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 117,
+    "dome_angle": -39.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 111,
+    "dome_angle": -37.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 106,
+    "dome_angle": -35.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 102,
+    "dome_angle": -34.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 97,
+    "dome_angle": -32.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 92,
+    "dome_angle": -30.666666666666668,
+    "distance_mm": null
+  },
+  {
+    "angle": 86,
+    "dome_angle": -28.666666666666668,
+    "distance_mm": 112
+  },
+  {
+    "angle": 81,
+    "dome_angle": -27.0,
+    "distance_mm": 111
+  },
+  {
+    "angle": 77,
+    "dome_angle": -25.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": 73,
+    "dome_angle": -24.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 69,
+    "dome_angle": -23.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": 65,
+    "dome_angle": -21.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": 62,
+    "dome_angle": -20.666666666666668,
+    "distance_mm": 106
+  },
+  {
+    "angle": 58,
+    "dome_angle": -19.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 53,
+    "dome_angle": -17.666666666666668,
+    "distance_mm": 106
+  },
+  {
+    "angle": 49,
+    "dome_angle": -16.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 45,
+    "dome_angle": -15.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 42,
+    "dome_angle": -14.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 37,
+    "dome_angle": -12.333333333333334,
+    "distance_mm": 102
+  },
+  {
+    "angle": 33,
+    "dome_angle": -11.0,
+    "distance_mm": 102
+  },
+  {
+    "angle": 30,
+    "dome_angle": -10.0,
+    "distance_mm": 102
+  },
+  {
+    "angle": 26,
+    "dome_angle": -8.666666666666666,
+    "distance_mm": 105
+  },
+  {
+    "angle": 22,
+    "dome_angle": -7.333333333333333,
+    "distance_mm": 101
+  },
+  {
+    "angle": 18,
+    "dome_angle": -6.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": 14,
+    "dome_angle": -4.666666666666667,
+    "distance_mm": 105
+  },
+  {
+    "angle": 12,
+    "dome_angle": -4.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": 9,
+    "dome_angle": -3.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": 4,
+    "dome_angle": -1.3333333333333333,
+    "distance_mm": 105
+  },
+  {
+    "angle": 0,
+    "dome_angle": 0.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": -2,
+    "dome_angle": 0.6666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": -4,
+    "dome_angle": 1.3333333333333333,
+    "distance_mm": 105
+  },
+  {
+    "angle": -6,
+    "dome_angle": 2.0,
+    "distance_mm": 110
+  },
+  {
+    "angle": -9,
+    "dome_angle": 3.0,
+    "distance_mm": 110
+  },
+  {
+    "angle": -12,
+    "dome_angle": 4.0,
+    "distance_mm": 110
+  },
+  {
+    "angle": -16,
+    "dome_angle": 5.333333333333333,
+    "distance_mm": 110
+  },
+  {
+    "angle": -18,
+    "dome_angle": 6.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -20,
+    "dome_angle": 6.666666666666667,
+    "distance_mm": 106
+  },
+  {
+    "angle": -24,
+    "dome_angle": 8.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -27,
+    "dome_angle": 9.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -31,
+    "dome_angle": 10.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": -34,
+    "dome_angle": 11.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": -36,
+    "dome_angle": 12.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -39,
+    "dome_angle": 13.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -41,
+    "dome_angle": 13.666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": -43,
+    "dome_angle": 14.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": -46,
+    "dome_angle": 15.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": -49,
+    "dome_angle": 16.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": -52,
+    "dome_angle": 17.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": -54,
+    "dome_angle": 18.0,
+    "distance_mm": 103
+  },
+  {
+    "angle": -56,
+    "dome_angle": 18.666666666666668,
+    "distance_mm": 103
+  },
+  {
+    "angle": -60,
+    "dome_angle": 20.0,
+    "distance_mm": 103
+  },
+  {
+    "angle": -62,
+    "dome_angle": 20.666666666666668,
+    "distance_mm": 103
+  },
+  {
+    "angle": -65,
+    "dome_angle": 21.666666666666668,
+    "distance_mm": 103
+  },
+  {
+    "angle": -67,
+    "dome_angle": 22.333333333333332,
+    "distance_mm": 103
+  },
+  {
+    "angle": -68,
+    "dome_angle": 22.666666666666668,
+    "distance_mm": 103
+  },
+  {
+    "angle": -70,
+    "dome_angle": 23.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": -72,
+    "dome_angle": 24.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": -74,
+    "dome_angle": 24.666666666666668,
+    "distance_mm": 112
+  },
+  {
+    "angle": -79,
+    "dome_angle": 26.333333333333332,
+    "distance_mm": 112
+  },
+  {
+    "angle": -82,
+    "dome_angle": 27.333333333333332,
+    "distance_mm": 116
+  },
+  {
+    "angle": -84,
+    "dome_angle": 28.0,
+    "distance_mm": 117
+  },
+  {
+    "angle": -86,
+    "dome_angle": 28.666666666666668,
+    "distance_mm": 121
+  },
+  {
+    "angle": -90,
+    "dome_angle": 30.0,
+    "distance_mm": 125
+  },
+  {
+    "angle": -93,
+    "dome_angle": 31.0,
+    "distance_mm": 129
+  },
+  {
+    "angle": -95,
+    "dome_angle": 31.666666666666668,
+    "distance_mm": 129
+  },
+  {
+    "angle": -97,
+    "dome_angle": 32.333333333333336,
+    "distance_mm": 129
+  },
+  {
+    "angle": -98,
+    "dome_angle": 32.666666666666664,
+    "distance_mm": 129
+  },
+  {
+    "angle": -100,
+    "dome_angle": 33.333333333333336,
+    "distance_mm": 129
+  },
+  {
+    "angle": -103,
+    "dome_angle": 34.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -103,
+    "dome_angle": 34.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -105,
+    "dome_angle": 35.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -107,
+    "dome_angle": 35.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -109,
+    "dome_angle": 36.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -112,
+    "dome_angle": 37.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -114,
+    "dome_angle": 38.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -115,
+    "dome_angle": 38.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -118,
+    "dome_angle": 39.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -120,
+    "dome_angle": 40.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -121,
+    "dome_angle": 40.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -122,
+    "dome_angle": 40.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -125,
+    "dome_angle": 41.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -127,
+    "dome_angle": 42.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -129,
+    "dome_angle": 43.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -131,
+    "dome_angle": 43.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -133,
+    "dome_angle": 44.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -135,
+    "dome_angle": 45.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -138,
+    "dome_angle": 46.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -138,
+    "dome_angle": 46.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -140,
+    "dome_angle": 46.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -144,
+    "dome_angle": 48.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -146,
+    "dome_angle": 48.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -148,
+    "dome_angle": 49.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -150,
+    "dome_angle": 50.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -152,
+    "dome_angle": 50.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -155,
+    "dome_angle": 51.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -157,
+    "dome_angle": 52.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -158,
+    "dome_angle": 52.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -159,
+    "dome_angle": 53.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -161,
+    "dome_angle": 53.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -164,
+    "dome_angle": 54.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -164,
+    "dome_angle": 54.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -163,
+    "dome_angle": 54.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -159,
+    "dome_angle": 53.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -153,
+    "dome_angle": 51.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -150,
+    "dome_angle": 50.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -145,
+    "dome_angle": 48.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -141,
+    "dome_angle": 47.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -136,
+    "dome_angle": 45.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -132,
+    "dome_angle": 44.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -126,
+    "dome_angle": 42.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -122,
+    "dome_angle": 40.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -117,
+    "dome_angle": 39.0,
+    "distance_mm": null
+  },
+  {
+    "angle": -112,
+    "dome_angle": 37.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -107,
+    "dome_angle": 35.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -104,
+    "dome_angle": 34.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -101,
+    "dome_angle": 33.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": -97,
+    "dome_angle": 32.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": -93,
+    "dome_angle": 31.0,
+    "distance_mm": 129
+  },
+  {
+    "angle": -89,
+    "dome_angle": 29.666666666666668,
+    "distance_mm": 122
+  },
+  {
+    "angle": -86,
+    "dome_angle": 28.666666666666668,
+    "distance_mm": 125
+  },
+  {
+    "angle": -82,
+    "dome_angle": 27.333333333333332,
+    "distance_mm": 117
+  },
+  {
+    "angle": -76,
+    "dome_angle": 25.333333333333332,
+    "distance_mm": 112
+  },
+  {
+    "angle": -73,
+    "dome_angle": 24.333333333333332,
+    "distance_mm": 112
+  },
+  {
+    "angle": -69,
+    "dome_angle": 23.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": -64,
+    "dome_angle": 21.333333333333332,
+    "distance_mm": 103
+  },
+  {
+    "angle": -59,
+    "dome_angle": 19.666666666666668,
+    "distance_mm": 103
+  },
+  {
+    "angle": -55,
+    "dome_angle": 18.333333333333332,
+    "distance_mm": 103
+  },
+  {
+    "angle": -52,
+    "dome_angle": 17.333333333333332,
+    "distance_mm": 103
+  },
+  {
+    "angle": -45,
+    "dome_angle": 15.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -40,
+    "dome_angle": 13.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": -36,
+    "dome_angle": 12.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -32,
+    "dome_angle": 10.666666666666666,
+    "distance_mm": 106
+  },
+  {
+    "angle": -28,
+    "dome_angle": 9.333333333333334,
+    "distance_mm": 106
+  },
+  {
+    "angle": -23,
+    "dome_angle": 7.666666666666667,
+    "distance_mm": 106
+  },
+  {
+    "angle": -19,
+    "dome_angle": 6.333333333333333,
+    "distance_mm": 106
+  },
+  {
+    "angle": -15,
+    "dome_angle": 5.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": -11,
+    "dome_angle": 3.6666666666666665,
+    "distance_mm": 110
+  },
+  {
+    "angle": -6,
+    "dome_angle": 2.0,
+    "distance_mm": 110
+  },
+  {
+    "angle": -2,
+    "dome_angle": 0.6666666666666666,
+    "distance_mm": 110
+  },
+  {
+    "angle": 1,
+    "dome_angle": -0.3333333333333333,
+    "distance_mm": 110
+  },
+  {
+    "angle": 4,
+    "dome_angle": -1.3333333333333333,
+    "distance_mm": 106
+  },
+  {
+    "angle": 9,
+    "dome_angle": -3.0,
+    "distance_mm": 105
+  },
+  {
+    "angle": 13,
+    "dome_angle": -4.333333333333333,
+    "distance_mm": 105
+  },
+  {
+    "angle": 16,
+    "dome_angle": -5.333333333333333,
+    "distance_mm": 105
+  },
+  {
+    "angle": 20,
+    "dome_angle": -6.666666666666667,
+    "distance_mm": 105
+  },
+  {
+    "angle": 23,
+    "dome_angle": -7.666666666666667,
+    "distance_mm": 105
+  },
+  {
+    "angle": 26,
+    "dome_angle": -8.666666666666666,
+    "distance_mm": 102
+  },
+  {
+    "angle": 30,
+    "dome_angle": -10.0,
+    "distance_mm": 102
+  },
+  {
+    "angle": 33,
+    "dome_angle": -11.0,
+    "distance_mm": 102
+  },
+  {
+    "angle": 36,
+    "dome_angle": -12.0,
+    "distance_mm": 102
+  },
+  {
+    "angle": 41,
+    "dome_angle": -13.666666666666666,
+    "distance_mm": 102
+  },
+  {
+    "angle": 46,
+    "dome_angle": -15.333333333333334,
+    "distance_mm": 102
+  },
+  {
+    "angle": 50,
+    "dome_angle": -16.666666666666668,
+    "distance_mm": 106
+  },
+  {
+    "angle": 52,
+    "dome_angle": -17.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 55,
+    "dome_angle": -18.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 57,
+    "dome_angle": -19.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 58,
+    "dome_angle": -19.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 61,
+    "dome_angle": -20.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 63,
+    "dome_angle": -21.0,
+    "distance_mm": 106
+  },
+  {
+    "angle": 67,
+    "dome_angle": -22.333333333333332,
+    "distance_mm": 106
+  },
+  {
+    "angle": 71,
+    "dome_angle": -23.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": 73,
+    "dome_angle": -24.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 75,
+    "dome_angle": -25.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": 79,
+    "dome_angle": -26.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 82,
+    "dome_angle": -27.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 85,
+    "dome_angle": -28.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 86,
+    "dome_angle": -28.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": 88,
+    "dome_angle": -29.333333333333332,
+    "distance_mm": 111
+  },
+  {
+    "angle": 92,
+    "dome_angle": -30.666666666666668,
+    "distance_mm": 112
+  },
+  {
+    "angle": 94,
+    "dome_angle": -31.333333333333332,
+    "distance_mm": 116
+  },
+  {
+    "angle": 98,
+    "dome_angle": -32.666666666666664,
+    "distance_mm": 120
+  },
+  {
+    "angle": 100,
+    "dome_angle": -33.333333333333336,
+    "distance_mm": 120
+  },
+  {
+    "angle": 104,
+    "dome_angle": -34.666666666666664,
+    "distance_mm": 120
+  },
+  {
+    "angle": 109,
+    "dome_angle": -36.333333333333336,
+    "distance_mm": 120
+  },
+  {
+    "angle": 112,
+    "dome_angle": -37.333333333333336,
+    "distance_mm": 120
+  },
+  {
+    "angle": 117,
+    "dome_angle": -39.0,
+    "distance_mm": 120
+  },
+  {
+    "angle": 121,
+    "dome_angle": -40.333333333333336,
+    "distance_mm": 120
+  },
+  {
+    "angle": 125,
+    "dome_angle": -41.666666666666664,
+    "distance_mm": 120
+  },
+  {
+    "angle": 129,
+    "dome_angle": -43.0,
+    "distance_mm": 120
+  },
+  {
+    "angle": 132,
+    "dome_angle": -44.0,
+    "distance_mm": 120
+  },
+  {
+    "angle": 134,
+    "dome_angle": -44.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 137,
+    "dome_angle": -45.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 138,
+    "dome_angle": -46.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 140,
+    "dome_angle": -46.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 141,
+    "dome_angle": -47.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 143,
+    "dome_angle": -47.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 145,
+    "dome_angle": -48.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 146,
+    "dome_angle": -48.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 148,
+    "dome_angle": -49.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 149,
+    "dome_angle": -49.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 151,
+    "dome_angle": -50.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 154,
+    "dome_angle": -51.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 156,
+    "dome_angle": -52.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 157,
+    "dome_angle": -52.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 158,
+    "dome_angle": -52.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 161,
+    "dome_angle": -53.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 166,
+    "dome_angle": -55.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 167,
+    "dome_angle": -55.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 167,
+    "dome_angle": -55.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 165,
+    "dome_angle": -55.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 162,
+    "dome_angle": -54.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 162,
+    "dome_angle": -54.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 163,
+    "dome_angle": -54.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 166,
+    "dome_angle": -55.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 169,
+    "dome_angle": -56.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 169,
+    "dome_angle": -56.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 166,
+    "dome_angle": -55.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 163,
+    "dome_angle": -54.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 159,
+    "dome_angle": -53.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 154,
+    "dome_angle": -51.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 150,
+    "dome_angle": -50.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 145,
+    "dome_angle": -48.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 141,
+    "dome_angle": -47.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 137,
+    "dome_angle": -45.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 131,
+    "dome_angle": -43.666666666666664,
+    "distance_mm": null
+  },
+  {
+    "angle": 127,
+    "dome_angle": -42.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 121,
+    "dome_angle": -40.333333333333336,
+    "distance_mm": null
+  },
+  {
+    "angle": 117,
+    "dome_angle": -39.0,
+    "distance_mm": null
+  },
+  {
+    "angle": 112,
+    "dome_angle": -37.333333333333336,
+    "distance_mm": 193
+  },
+  {
+    "angle": 106,
+    "dome_angle": -35.333333333333336,
+    "distance_mm": 193
+  },
+  {
+    "angle": 101,
+    "dome_angle": -33.666666666666664,
+    "distance_mm": 193
+  },
+  {
+    "angle": 96,
+    "dome_angle": -32.0,
+    "distance_mm": 193
+  },
+  {
+    "angle": 92,
+    "dome_angle": -30.666666666666668,
+    "distance_mm": 116
+  },
+  {
+    "angle": 86,
+    "dome_angle": -28.666666666666668,
+    "distance_mm": 112
+  },
+  {
+    "angle": 80,
+    "dome_angle": -26.666666666666668,
+    "distance_mm": 107
+  },
+  {
+    "angle": 76,
+    "dome_angle": -25.333333333333332,
+    "distance_mm": 107
+  },
+  {
+    "angle": 72,
+    "dome_angle": -24.0,
+    "distance_mm": 107
+  },
+  {
+    "angle": 67,
+    "dome_angle": -22.333333333333332,
+    "distance_mm": 107
+  }
+]

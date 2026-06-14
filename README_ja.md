@@ -94,6 +94,25 @@ MuJoCoモデル自体の作成手順（Bricklink Studio設計からの変換）�
 - `dome_angle` — ドーム角度（度、`angle / -3`）
 - `distance_mm` — 有効距離範囲外の場合は `null`
 
+## 可視化
+
+`raspi/sonar_plot.py` は出力JSONを読み込み、`dome_angle` と `distance_mm` の関係を
+扇形プロットと折れ線プロットで表示します。往復スキャンのパスごとに色分けして重ね描きします。
+
+```bash
+python3 raspi/sonar_radar.py > scan.json
+python3 raspi/sonar_plot.py scan.json -o scan_result.png --title "scan result"
+```
+
+| 実機（`docs/scan_real.json`） | シミュレーション（`docs/scan_sim.json`） |
+|---|---|
+| ![実機スキャン例](docs/scan_real_example.png) | ![SIMスキャン例](docs/scan_sim_example.png) |
+
+実機の超音波距離センサーは指向性が広いため、壁を広い角度範囲（この例では約-45°〜+35°）
+で検出しています。一方、SIM側の距離センサーは単一レイキャストのため、正面付近の
+狭い角度範囲（この例では約-21°〜+1°）でしか壁を検出しません。この距離センサーのFOV
+（指向性）の乖離は、現時点では未解消の既知の差異です（[mujoco_model/studio_to_mujoco.md](mujoco_model/studio_to_mujoco.md)参照）。
+
 ## キャリブレーション
 
 起動時にモーターを機械的0位置へ移動し、ギアの噛み合わせのズレを補正する

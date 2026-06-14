@@ -94,6 +94,28 @@ JSON array to stdout, log to stderr:
 - `dome_angle` — dome angle (degrees, `angle / -3`)
 - `distance_mm` — `null` when no object is detected within the valid range
 
+## Visualization
+
+`raspi/sonar_plot.py` reads the JSON output and plots `dome_angle` vs
+`distance_mm` as a fan-shaped polar plot and a line plot, overlaying each
+back-and-forth scan pass in a different color:
+
+```bash
+python3 raspi/sonar_radar.py > scan.json
+python3 raspi/sonar_plot.py scan.json -o scan_result.png --title "scan result"
+```
+
+| Real hardware (`docs/scan_real.json`) | Simulation (`docs/scan_sim.json`) |
+|---|---|
+| ![real scan example](docs/scan_real_example.png) | ![sim scan example](docs/scan_sim_example.png) |
+
+The real ultrasonic distance sensor has a wide beam, so it detects the wall
+across a wide angular range (roughly -45° to +35° here). The simulated
+distance sensor uses a single raycast, so it only detects the wall in a
+narrow angular range directly in front (roughly -21° to +1° here). This FOV
+discrepancy between the real sensor and the simulation is a known, currently
+unaddressed difference (see [mujoco_model/studio_to_mujoco.md](mujoco_model/studio_to_mujoco.md)).
+
 ## Calibration
 
 On startup, the motor moves to its mechanical zero position, then rotates by

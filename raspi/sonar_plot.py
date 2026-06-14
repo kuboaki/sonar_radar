@@ -23,7 +23,7 @@ import math
 import argparse
 import matplotlib
 matplotlib.use('Agg')
-matplotlib.rcParams['font.family'] = 'Noto Serif CJK JP'
+matplotlib.rcParams['font.family'] = ['Noto Sans CJK JP', 'Hiragino Sans', 'IPAGothic']
 import matplotlib.pyplot as plt
 import numpy as np
 

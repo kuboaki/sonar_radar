@@ -144,6 +144,14 @@ else:
             _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "press_ctrl")
         _press_qadr = _mdl.jnt_qposadr[
             mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "press_slide")]
+        _wall_x_aid = mujoco.mj_name2id(
+            _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "wall_x_ctrl")
+        _wall_y_aid = mujoco.mj_name2id(
+            _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "wall_y_ctrl")
+        _wall_x_qadr = _mdl.jnt_qposadr[
+            mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "wall_x")]
+        _wall_y_qadr = _mdl.jnt_qposadr[
+            mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "wall_y")]
 
         # sonar_radar02.py 実行中に生成される SpikeHat インスタンスを受け取る
         _hat_holder = []
@@ -161,8 +169,10 @@ else:
                     if _hat_holder:
                         _hat = _hat_holder[0]
 
-                        # Controlタブの press_ctrl スライダーを実シミュレーションへ転送
+                        # Controlタブの press_ctrl / wall_x_ctrl / wall_y_ctrl を実シミュレーションへ転送
                         _hat.sim_set_ctrl(_press_aid, float(_dat.ctrl[_press_aid]))
+                        _hat.sim_set_ctrl(_wall_x_aid, float(_dat.ctrl[_wall_x_aid]))
+                        _hat.sim_set_ctrl(_wall_y_aid, float(_dat.ctrl[_wall_y_aid]))
 
                         # 実シミュレーションのモーター角度を表示用に反映
                         try:
@@ -178,6 +188,15 @@ else:
                         try:
                             _dat.qpos[_press_qadr] = _hat.sim_get_qpos(_press_qadr)
                             _dat.qvel[_press_qadr] = 0.0
+                        except RuntimeError:
+                            pass
+
+                        # 壁(wall_body)の位置を表示用に反映
+                        try:
+                            _dat.qpos[_wall_x_qadr] = _hat.sim_get_qpos(_wall_x_qadr)
+                            _dat.qvel[_wall_x_qadr] = 0.0
+                            _dat.qpos[_wall_y_qadr] = _hat.sim_get_qpos(_wall_y_qadr)
+                            _dat.qvel[_wall_y_qadr] = 0.0
                         except RuntimeError:
                             pass
 

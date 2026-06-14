@@ -26,12 +26,18 @@
     <geom name="floor" type="plane" size="1 1 0.01"
           rgba="0.6 0.6 0.6 1" contype="1" conaffinity="1"/>
 
-    <!-- 障害物: 正面右前方 約100mm、幅50mm の壁 -->
-    <geom name="wall" type="box"
-          pos="0.06 0.12 0.05"
-          size="0.025 0.005 0.05"
-          rgba="0.8 0.8 0.2 1"
-          contype="1" conaffinity="1"/>
+    <!-- 障害物: ソナーの計測範囲内（正面付近、約120mm）に配置。
+         wall_x / wall_y で水平面内を移動可能（向きは固定）。 -->
+    <body name="wall_body" pos="0.0037 -0.1203 0.06">
+      <joint name="wall_x" type="slide" axis="1 0 0" range="-0.06 0.06" damping="5.0"/>
+      <joint name="wall_y" type="slide" axis="0 1 0" range="-0.05 0.10" damping="5.0"/>
+      <inertial pos="0 0 0" mass="0.05" diaginertia="0.0001 0.0001 0.0001"/>
+      <!-- 実機の壁: 幅48mm(6ポッチ)×高さ120mm(15ポッチ)、厚さは無視 -->
+      <geom name="wall" type="box"
+            size="0.024 0.005 0.06"
+            rgba="0.8 0.8 0.2 1"
+            contype="1" conaffinity="1"/>
+    </body>
 
     <!-- 台座: ワールドに固定 -->
     <body name="radar_base" pos="0 0 0" euler="0 0 0">
@@ -94,6 +100,10 @@
            gear="10" ctrllimited="true" ctrlrange="-1 1"/>
     <position name="press_ctrl" joint="press_slide"
               kp="50" ctrllimited="true" ctrlrange="0.0 0.030"/>
+    <position name="wall_x_ctrl" joint="wall_x"
+              kp="50" ctrllimited="true" ctrlrange="-0.06 0.06"/>
+    <position name="wall_y_ctrl" joint="wall_y"
+              kp="50" ctrllimited="true" ctrlrange="-0.05 0.10"/>
   </actuator>
 
   <sensor>

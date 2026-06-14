@@ -73,7 +73,7 @@
 
     </body>
 
-    <!-- 終了スイッチ（フォースセンサー）: sonar_radar02.py のスキャン終了トリガー。
+    <!-- 終了スイッチ（フォースセンサー）: sonar_radar.py のスキャン終了トリガー。
          Controlタブの press_ctrl を動かして押すとスキャンが終了する。 -->
     <body name="force_sensor_body" pos="0.10 0 0.010">
       <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>

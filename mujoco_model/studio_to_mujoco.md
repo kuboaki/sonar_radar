@@ -6,8 +6,13 @@ Bricklink Studioで作成したLEGOモデルをMuJoCo物理シミュレーター
 ここでは、ソナーレーダーモデル（`sonar_radar`）を例に説明する。
 
 ```
-Studio (.io) → Blender → STLメッシュ → MuJoCo XML → MuJoCoビューア
+Studio (.io) → Blender → STLメッシュ → MuJoCo XML（配置調整）→ Control割り当て → ビューア設定
 ```
+
+最終的な目的は「実機の開発をシミュレータ上のコード(`raspi/sonar_radar.py`)で行い、
+そのコードをそのまま実機(`libspikehat`)に持っていって動かす」こと。
+そのためMuJoCoモデル側は、`libspikehat_sim` が要求するjoint/site/sensor構成
+（[9. libspikehat_simとの連携](#9-libspikehat_simとの連携)参照）に適合させる必要がある。
 
 ---
 
@@ -23,7 +28,8 @@ MuJoCoのジョイント（関節）は body の階層で表現する。Studio�
 
 例：
 - `radar_base` … 台座（固定）
-- `radar_dome` … ドームとモーター一式（旋回する）
+- `radar_dome` … ドーム一式（旋回する）
+- `bevel_gear_12` … モーター側の12Tベベルギア（旋回する）
 
 **色を使う部分（マーカーなど）もサブモデルに分ける**
 
@@ -35,30 +41,31 @@ MuJoCoのSTLメッシュは単色しか指定できない。複数色を再現�
 
 > **注意：** Studioでは単一ブロックのサブモデルは作成できない。ブッシュなど固定パーツと組み合わせてサブモデルにする。
 
-**モーターのローターはカスタムパーツ化する**
+**ギアでつながる回転部品は、それぞれ独立したサブモデルにする**
 
-標準のモーターパーツはボディとローターが一体のため、MuJoCoで回転させられない。以下のように分離したカスタムパーツを作成する。
+`sonar_radar07` では、モーター側の12Tベベルギア（`bevel_gear_12`）とドーム側の36Tベベルギア
+（ドーム一式に内包）が別々に回転する。MuJoCo側ではこれを2つの独立したhinge jointとし、
+`equality`制約でギア比・回転方向を結びつける（[6.3](#63-equality制約によるギア連動)参照）。
+そのため、Studio側でもこの2つを別サブモデルとして分離しておく。
 
-- `motor_body`（`m71d95b20_202662_110634.dat`）… モーター本体（固定）
-- `motor_rotor`（`m71d95b20_202662_032825.dat`）… ターンテーブル（旋回軸）
+> 旧版（`sonar_radar06`）ではモーター本体とローターを一体のカスタムパーツ
+> （`motor_body`/`motor_rotor`）として作成していたが、現行版ではモーター本体側の
+> メッシュは `libspikehat_sim/examples/test_motor.xml` 側に切り出され、
+> `sonar_radar.xml` には含まれない。
 
-ローターのdat原点が旋回軸の位置になるようにカスタムパーツを設計することが重要。
-
-### 1.2 サブモデルの構造例
+### 1.2 サブモデルの構造例（sonar_radar07）
 
 ```
-sonar_radar06.io
-├── radar_base         … 台座グレーパーツ
-│   ├── marker_blue    … 青マーカー（サブモデル）
-│   │   ├── 3713.dat   … ブッシュ（グレー）
-│   │   └── 39789.dat  … マーカーブロック（青）
-│   └── marker_red     … 赤マーカー（サブモデル）
-│       ├── 3713.dat   … ブッシュ（グレー）
-│       └── 39789.dat  … マーカーブロック（赤）
-└── radar_dome         … ドーム＋モーター一式
-    ├── motor_body     … モーター本体
-    ├── motor_rotor    … ターンテーブル（旋回軸）
-    └── （その他パーツ）
+sonar_radar07.io
+├── radar_base          … 台座グレーパーツ
+│   ├── marker_blue     … 青マーカー（サブモデル）
+│   │   ├── 3713.dat    … ブッシュ（グレー）
+│   │   └── 39789.dat   … マーカーブロック（青）
+│   └── marker_red      … 赤マーカー（サブモデル）
+│       ├── 3713.dat    … ブッシュ（グレー）
+│       └── 39789.dat   … マーカーブロック（赤）
+├── radar_dome          … ドーム一式（36Tベベルギア32498.dat、距離/カラーセンサー含む）
+└── bevel_gear_12       … モーター側12Tベベルギア（旋回軸=このサブモデル原点）
 ```
 
 ---
@@ -137,19 +144,23 @@ Studioで作成したカスタムパーツ（モーターローターなど）�
 インポートすると、Studioのサブモデル構造がBlenderのオブジェクト階層として反映される。
 
 ```
-sonar_radar06.io  [EMPTY]
-├── radar_base    [EMPTY]
-│   ├── 32054.dat [MESH]
+sonar_radar07.io  [EMPTY]
+├── radar_base       [EMPTY]
+│   ├── 32054.dat    [MESH]
 │   ├── ...
-│   ├── marker_blue [EMPTY]
+│   ├── marker_blue  [EMPTY]
 │   │   ├── 3713.dat  [MESH]
 │   │   └── 39789.dat [MESH]
-│   └── marker_red  [EMPTY]
+│   └── marker_red   [EMPTY]
 │       ├── 3713.dat.001  [MESH]
 │       └── 39789.dat.001 [MESH]
-└── radar_dome    [EMPTY]
-    ├── 37316c01.dat [MESH]  ← 旋回軸
-    └── ...
+├── radar_dome       [EMPTY]
+│   ├── 32498.dat    [MESH]  ← 36Tベベルギア（旋回軸原点）
+│   ├── 37316c01.dat [MESH]  ← 距離センサー
+│   ├── 37308c01.dat [MESH]  ← カラーセンサー
+│   └── ...
+└── bevel_gear_12    [EMPTY]
+    └── ...（12Tベベルギア本体、旋回軸=このEMPTYの原点）
 ```
 
 ---
@@ -158,63 +169,73 @@ sonar_radar06.io  [EMPTY]
 
 ### 4.1 スクリプトの概要
 
-`blender_export.py` をBlenderのスクリプトエディタで実行することで、MuJoCo用のSTLメッシュファイルを生成する。
+`blender_export.py` をBlenderのスクリプトエディタで実行することで、MuJoCo用のSTLメッシュファイルと、
+MJCFに貼り付けるためのpos値・site値をログに出力する。
 
 ### 4.2 座標変換の処理
 
 LDraw座標系からMuJoCo座標系への変換を以下の手順で行う。
 
-1. **ワールド座標に変換**  
+1. **ワールド座標に変換**
    `matrix_world` を使って各頂点をBlenderのワールド座標に変換する
 
-2. **オフセット適用（XY中心化・Z底面=0）**  
-   全パーツの統合バウンディングボックスを計算し、XY方向は中心、Z方向は底面が0になるようにオフセットを加算する
-   ```python
-   dx, dy, dz = -cx, -cy, -z0   # bottom_z モード
-   ```
+2. **オフセット適用**
+   `center_mode` に応じてオフセットを計算する（詳細は4.3）
 
-3. **LDraw → MuJoCo座標変換 + スケール適用**  
+3. **LDraw → MuJoCo座標変換 + スケール適用**
    ```python
    mj_x = -rx * SCALE   # SCALE = 0.0004 (LDU → m)
    mj_y = -ry * SCALE
    mj_z =  rz * SCALE
    ```
 
-4. **quad → 三角形分割**  
+4. **quad → 三角形分割**
    MuJoCo（STL）は三角形ポリゴンのみ対応のため、四角形ポリゴンをfan分割する
 
-### 4.3 サブモデル境界の扱い（stop_at_empty）
+### 4.3 オフセットの種類（center_mode）
 
-`radar_base` のSTL生成時に `marker_red`/`marker_blue` のメッシュを誤って含めないよう、`stop_at_empty=True` を指定する。これにより、EMPTY（サブモデル境界）に到達したところで再帰収集を停止する。
+| center_mode | 内容 | 用途 |
+|---|---|---|
+| `bottom_z` | XY中心化＋Z底面=0 | 単独の固定パーツ |
+| `center` | XYZ中心化 | フォールバック |
+| `rotor_axis` | 指定オブジェクトの原点を基準 | 旋回するパーツ（`radar_dome`, `bevel_gear_12`） |
+| `shared` | 呼び出し側で計算した共通オフセットを使用 | `radar_base`（gray/red/blue で位置関係を保つ） |
 
-```python
-def collect_mesh_descendants(root, stop_at_empty=False):
-    for child in root.children:
-        if child.type == 'MESH':
-            result.append(child)
-        elif child.type == 'EMPTY':
-            if stop_at_empty:
-                pass  # サブモデル境界でストップ
-            else:
-                result.extend(collect_mesh_descendants(child, stop_at_empty))
+`radar_dome` は `32498.dat`（36Tベベルギア）、`bevel_gear_12` はサブモデル自身の原点を
+`rotor_axis_obj` として渡す。これにより、STLの原点がそのままMuJoCoの `joint` 位置（hingeの回転軸）
+と一致するため、MJCF側で `body pos` を「joint位置」として扱える。
+
+### 4.4 サブモデル境界の扱い（stop_at_empty）
+
+`radar_base` のSTL生成時は、`marker_red`/`marker_blue` のメッシュを誤って含めないよう
+`stop_at_empty=True` を指定する。これにより、EMPTY（サブモデル境界）に到達したところで
+再帰収集を停止する。
+
+### 4.5 色別STL分割（radar_base）
+
+マーカーブロックの色を再現するため、`radar_base` を3つのSTL（gray/red/blue）に分割する。
+gray/red/blueの3つは、全パーツの統合bboxから計算した共通オフセット（`shared_offset`）を使う。
+これにより3つのSTLの位置関係が正しく保たれ、MuJoCo上で重ね合わせたときに一致する。
+
+### 4.6 センサーsite位置の自動計算
+
+`radar_dome` エクスポート時、`32498.dat`（旋回軸）を基準に、距離センサー（`37316c01.dat`）と
+カラーセンサー（`37308c01.dat`）のローカル座標を計算し、`<site>` タグの形でログに出力する
+（`compute_local_site_pos`）。
+
+```
+<site name="sonar_site" pos="..." size="0.01" rgba="1 0 0 1"/>
+<site name="color_site" pos="..." size="0.01" rgba="1 1 0 1"/>
 ```
 
-### 4.4 色別STL分割
+これは**初期値**であり、実際にはビューアで実機の検出結果と見比べながら微調整する
+（[7. センサーsiteの配置調整](#7-センサーsiteの配置調整)参照）。
 
-マーカーブロックの色を再現するため、`radar_base` を3つのSTLに分割する。
-
-**共有オフセットを使う理由：**
-gray/red/blueの3つのSTLは、全パーツの統合bboxから計算した共通オフセットを使う。これにより3つのSTLの位置関係が正しく保たれ、MuJoCo上で重ね合わせたときに一致する。
-
-### 4.5 旋回軸の扱い
-
-`radar_dome` のSTL生成時は、旋回軸オブジェクト（`37316c01.dat`）のワールド座標を原点として使う（`center_mode="rotor_axis"`）。これにより、STLの原点がMuJoCoのジョイント位置と一致する。
-
-### 4.6 スクリプトの実行方法
+### 4.7 スクリプトの実行方法
 
 1. Blenderのスクリプトエディタで `blender_export.py` を開く
 2. 「スクリプトを実行」ボタンをクリック
-3. `blender_export_log.txt` で結果を確認
+3. `blender_export_log.txt` で結果（オフセット値、MJCF pos、site pos、XMLスニペット）を確認
 
 ---
 
@@ -224,207 +245,224 @@ gray/red/blueの3つのSTLは、全パーツの統合bboxから計算した共�
 
 | ファイル | 内容 | rgba |
 |----------|------|------|
-| `radar_base_gray.stl` | 台座グレーパーツ（11パーツ） | `0.366 0.361 0.371 1` |
-| `radar_base_red.stl` | 赤マーカーブロック（2パーツ） | `0.578 0.010 0.002 1` |
-| `radar_base_blue.stl` | 青マーカーブロック（2パーツ） | `0.000 0.089 0.515 1` |
-| `radar_dome.stl` | ドーム+モーター一式 | `0.2 0.5 0.2 1` |
-| `motor_body.stl` | モーター本体 | `0.5 0.5 0.5 1` |
-| `motor_rotor.stl` | ターンテーブル（旋回軸） | `0.8 0.4 0.1 1` |
+| `radar_base_gray.stl` | 台座グレーパーツ | `0.366 0.361 0.371 1` |
+| `radar_base_red.stl` | 赤マーカーブロック | `0.578 0.010 0.002 1` |
+| `radar_base_blue.stl` | 青マーカーブロック | `0.000 0.089 0.515 1` |
+| `radar_dome.stl` | ドーム一式（36Tベベルギア含む） | `0.2 0.5 0.2 1` |
+| `bevel_gear_12.stl` | モーター側12Tベベルギア | `0.9 0.7 0.1 1` |
 
 ### 5.2 ログファイル
 
-- `blender_export_log.txt` … 座標変換のオフセット値、MJCF posの計算結果、XMLスニペットを出力
+- `blender_export_log.txt` … 座標変換のオフセット値、MJCF posの計算結果、site pos、XMLスニペットを出力
 
 ---
 
-## 6. MuJoCo XMLの構造
+## 6. MuJoCo XMLへの組み込みと配置調整
 
-### 6.1 ioファイルのサブモデルとXMLの対応
-
-Studioのサブモデル構造がMuJoCoのbody階層に対応する。
+### 6.1 body階層とSTLの対応
 
 ```
-Studio サブモデル         MuJoCo XML
-─────────────────────    ──────────────────────────
-radar_base            →  <body name="radar_base">
-  marker_red          →    <geom name="base_red_geom" .../>  ※同じbody内に複数geom
-  marker_blue         →    <geom name="base_blue_geom" .../>
-radar_dome            →  <body name="radar_dome">
-  motor_rotor         →    <body name="motor_rotor">
-                               <joint name="turret_joint" .../>  ← 旋回軸
+Studio サブモデル        MuJoCo XML
+────────────────────    ──────────────────────────────────────────
+radar_base           →  <body name="radar_base">
+  marker_red         →    <geom name="base_red_geom" .../>  ※同じbody内に複数geom
+  marker_blue        →    <geom name="base_blue_geom" .../>
+
+bevel_gear_12        →  <body name="motor_rotor">           ← motor_joint(hinge)
+                            <geom name="bevel_gear_12_geom" .../>
+
+radar_dome           →  <body name="radar_dome">            ← dome_joint(hinge)
+                            <geom name="dome_geom" .../>
+                            <site name="sonar_site" .../>
+                            <site name="color_site" .../>
 ```
 
-### 6.2 XMLの構造
+`motor_rotor`（12Tギア）と `radar_dome`（36Tギア）は、いずれも `radar_base` の直下に
+**独立した body** として配置し、それぞれに `hinge` jointを持たせる。2つのjointは
+equality制約で連動させる（[6.3](#63-equality制約によるギア連動)）。
+
+### 6.2 配置（pos/euler）はBlender出力どおりにならない
+
+`blender_export_log.txt` に出力されるpos値（`rotor_axis`基準で計算した値）は**初期値**であり、
+そのままではビューア上でパーツ同士の噛み合いや向きがズレることが多い。
+実際には以下のような**手動調整が必須**になる。
+
+- **回転方向（axis符号）の調整**
+  Studio/Blender側のZ軸回転と、MuJoCo `euler`・`joint axis` の符号の関係は自明ではない。
+  「正方向に回したらどちらに動くべきか」を実機と見比べ、`joint axis="0 0 1"` /
+  `axis="0 0 -1"` のどちらにするかを決める
+  （[[feedback_mujoco_hinge_axis_vs_equality_sign]] 参照：符号調整は
+  equality制約側ではなく hinge axis 側で行うこと）。
+
+- **ギアの噛み合い位置の微調整**
+  `motor_rotor`（12T）と `radar_dome`（36T）はそれぞれ別サブモデルとしてエクスポートされた
+  原点を基準に配置するが、Studio上の組み立て位置によっては数度ズレた状態でしか噛み合わない
+  （sonar_radar07では実測5度のズレがあった）。この機構的なズレは
+  `raspi/sonar_radar.py` 側の `SENSOR_HOME_OFFSET` で補正し、**MuJoCoモデル自体は
+  組み立て可能な位置であればよい**、という方針にしている。
+
+- **dome本体の位置(pos)**
+  `radar_dome` の `pos` は、`bevel_gear_12`（motor_rotor）の旋回軸との相対位置になるよう
+  ビューアで動かしながら微調整する。現在値は `pos="-0.0083 0.0007 0.0358"`。
+
+### 6.3 equality制約によるギア連動
+
+12T-36Tベベルギアの噛み合い（ギア比1:3、回転方向反転）は、2つのhinge jointを
+`equality`制約の `polycoef` で結びつけて表現する。
 
 ```xml
-<mujoco model="sonar_radar">
-  <compiler angle="degree" meshdir="meshes/"/>
-
-  <asset>
-    <!-- 色別に分割したSTL -->
-    <mesh name="radar_base_gray_mesh" file="radar_base_gray.stl" scale="1 1 1"/>
-    <mesh name="radar_base_red_mesh"  file="radar_base_red.stl"  scale="1 1 1"/>
-    <mesh name="radar_base_blue_mesh" file="radar_base_blue.stl" scale="1 1 1"/>
-    <mesh name="radar_dome_mesh"      file="radar_dome.stl"      scale="1 1 1"/>
-    <mesh name="motor_body_mesh"      file="motor_body.stl"      scale="1 1 1"/>
-    <mesh name="motor_rotor_mesh"     file="motor_rotor.stl"     scale="1 1 1"/>
-  </asset>
-
-  <worldbody>
-    <!-- 台座：色別に複数geomで定義 -->
-    <body name="radar_base" pos="0 0 0" euler="0 0 0">
-      <geom name="base_gray_geom" type="mesh" mesh="radar_base_gray_mesh"
-            contype="0" conaffinity="0" rgba="0.366 0.361 0.371 1"/>
-      <geom name="base_red_geom"  type="mesh" mesh="radar_base_red_mesh"
-            contype="0" conaffinity="0" rgba="0.578 0.010 0.002 1"/>
-      <geom name="base_blue_geom" type="mesh" mesh="radar_base_blue_mesh"
-            contype="0" conaffinity="0" rgba="0.000 0.089 0.515 1"/>
-
-      <!-- モーターボディ（固定） -->
-      <body name="motor_body" pos="0.0076 0.0004 0.0">
-        <geom name="motor_body_geom" type="mesh" mesh="motor_body_mesh"
-              contype="0" conaffinity="0" rgba="0.5 0.5 0.5 1"/>
-
-        <!-- モーターローター（旋回） -->
-        <body name="motor_rotor" pos="0.0001 0.0239 0.0160">
-          <joint name="turret_joint" type="hinge" axis="0 0 1"
-                 damping="0.05" armature="0.001"/>
-          <geom name="motor_rotor_geom" type="mesh" mesh="motor_rotor_mesh"
-                contype="0" conaffinity="0" rgba="0.8 0.4 0.1 1"/>
-
-          <!-- ドーム（rotorに従属して旋回） -->
-          <body name="radar_dome" pos="0 0.008 0.028" euler="0 0 180">
-            <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
-                  contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>
-            <!-- ソナーセンサー（前方） -->
-            <site name="sonar_site"  pos="0 -0.016 0.000" size="0.01" rgba="1 0 0 1"/>
-            <!-- カラーセンサー（後方・下向き） -->
-            <site name="color_site"  pos="0  0.048 0.008" size="0.01" rgba="1 1 0 1"/>
-          </body>
-        </body>
-      </body>
-    </body>
-  </worldbody>
-
-  <actuator>
-    <motor name="turret_motor" joint="turret_joint"
-           gear="10" ctrllimited="true" ctrlrange="-1 1"/>
-  </actuator>
-
-  <sensor>
-    <jointpos  name="turret_angle" joint="turret_joint"/>
-    <jointvel  name="turret_vel"   joint="turret_joint"/>
-    <framepos  name="sonar_pos"    objtype="site" objname="sonar_site"/>
-    <framequat name="sonar_quat"   objtype="site" objname="sonar_site"/>
-    <framepos  name="color_pos"    objtype="site" objname="color_site"/>
-    <framequat name="color_quat"   objtype="site" objname="color_site"/>
-  </sensor>
-
-</mujoco>
+<equality>
+  <!-- ベベルギア(12T-36T)噛み合い: dome_joint = -motor_joint / 3 -->
+  <joint joint1="dome_joint" joint2="motor_joint" polycoef="0 -0.33333333 0 0 0"/>
+</equality>
 ```
 
-### 6.3 確定した位置パラメータ
-
-| body | pos | euler |
-|------|-----|-------|
-| `radar_base` | `0 0 0` | `0 0 0` |
-| `motor_body` | `0.0076 0.0004 0.0` | `0 0 0` |
-| `motor_rotor` | `0.0001 0.0239 0.0160` | `0 0 0` |
-| `radar_dome` | `0 0.008 0.028` | `0 0 180` |
-
-**センサーsite：**
-
-| site | pos | 用途 |
-|------|-----|------|
-| `sonar_site` | `0 -0.016 0.000` | ソナーセンサー（前方） |
-| `color_site` | `0 0.048 0.008` | カラーセンサー（後方・下向き） |
+> **回転方向の調整は `axis` で行う。** `polycoef` の符号を変えて回転方向を反転させると、
+> 一見動くが速度比などで不整合が生じることがある。回転方向の反転は
+> `<joint ... axis="0 0 -1" .../>` のように joint の `axis` 側で行い、
+> `polycoef` はギア比（絶対値）のみを表す、という分担にする。
 
 ---
 
-## 7. MuJoCoビューアで確認する
+## 7. センサーsiteの配置調整
 
-### 7.1 起動方法
+`sonar_site`（距離センサー）・`color_site`（カラーセンサー）は、4.6で自動計算した値を初期値として、
+以下の手順で実機に合わせて微調整する。
 
-```bash
-cd /Users/kuboaki/Documents/LEGO_Studio_models/sonar_radar_model/
-python -m mujoco.viewer --mjcf=sonar_radar.xml
-```
+1. **初期配置**: `blender_export_log.txt` 出力値をXMLに貼り付ける
+2. **静止状態での距離値の確認**: dome角度0°（正面）で `sonar_site` から壁までの距離を
+   simで読み取り、実機の同条件での測定値（例: 実機118mm vs sim116mm）と比較してZ/Y位置を調整
+3. **マーカー検出角度の確認**: `color_site` の位置・向きにより、赤/青マーカーを検出する
+   dome角度がsim/実機で一致するかを確認し、位置を微調整する
+4. **ビューアでの目視確認**: site（球で表示される）が実機の対応する部品（センサーブロック）の
+   位置に重なっているかを目視で確認する
 
-### 7.2 確認ポイント
-
-- **静止状態** … 各パーツが正しい位置に配置されているか
-- **地面への接地** … `radar_base` の底面が床（Z=0）に接しているか
-- **旋回動作** … Controlスライダーで `turret_motor` を操作し、ドームがrotorと一緒に旋回するか
-- **マーカーの色** … 赤・青のマーカーブロックが正しい色で表示されているか
-
-### 7.3 ビューア操作
-
-| 操作 | 内容 |
-|------|------|
-| マウス右ドラッグ | 視点回転 |
-| マウス中ドラッグ | 平行移動 |
-| スクロール | ズーム |
-| Simulation → Run | シミュレーション開始 |
-| Control パネル | actuatorのスライダー操作 |
+site位置の調整は、6.2の本体位置(pos)調整と相互に影響するため、
+「本体位置を仮決め → site位置を実測値に合わせる → 旋回させて再確認」を繰り返す。
 
 ---
 
-## 8. ファイル一覧
+## 8. Controlの割り当て
 
-```
-sonar_radar_model/
-├── sonar_radar.xml              … MuJoCo本番XMLファイル
-├── sonar_radar_color_test.xml   … 色確認用テストXML
-├── blender_export.py            … Blenderエクスポートスクリプト（本番）
-├── blender_export_log.txt       … エクスポートログ
-└── meshes/
-    ├── radar_base_gray.stl      … 台座グレーパーツ
-    ├── radar_base_red.stl       … 赤マーカー
-    ├── radar_base_blue.stl      … 青マーカー
-    ├── radar_dome.stl           … ドーム
-    ├── motor_body.stl           … モーター本体
-    └── motor_rotor.stl          … モーターローター
-```
+ビューアの **Control** タブから操作できるアクチュエータと、`libspikehat_sim` が参照するsensorを
+以下のように対応づける。
+
+### 8.1 actuator一覧
+
+| actuator | joint | 種別 | 用途 |
+|---|---|---|---|
+| `turret_motor` | `motor_joint` | motor（トルク, gear=10） | `motor_pwm`/`motor_run_to_position` で旋回 |
+| `press_ctrl` | `press_slide` | position | 終了スイッチ(`press_body`)を押す（ビューア操作用） |
+| `wall_x_ctrl` | `wall_x` | position | 障害物(`wall_body`)のX位置（ビューア操作用） |
+| `wall_y_ctrl` | `wall_y` | position | 障害物(`wall_body`)のY位置（ビューア操作用） |
+
+`turret_motor` のみがアプリケーションコード（`sonar_radar.py`）から操作される。
+他の3つは**ビューアのControlタブから人間が操作する**ためのもので、実機には存在しない
+sim専用のオブジェクト（壁・終了スイッチ）を動かすために用意している。
+
+### 8.2 sensor一覧
+
+| sensor | 種別 | 対応するlibspikehat_sim API |
+|---|---|---|
+| `turret_angle`/`turret_vel` | jointpos/jointvel (`motor_joint`) | `motor_get_position` |
+| `dome_angle`/`dome_vel` | jointpos/jointvel (`dome_joint`) | （デバッグ用、API未使用） |
+| `sonar_pos`/`sonar_quat` | framepos/framequat (`sonar_site`) | `distance_read`（前方レイキャスト） |
+| `color_pos`/`color_quat` | framepos/framequat (`color_site`) | `color_read_hsv`/`color_read_rgb`（下方レイキャスト） |
+| `force_touch` | touch (`force_site`) | `force_is_pressed` |
+
+新しい実機を作る場合も、**アプリコードが使うAPIに対応するsite/sensorは必ず用意する**
+（`motor_joint` + `sonar_site` + `color_site` + `force_site` 相当）。
+壁や終了スイッチのような「sim専用の操作対象」は、実機に存在しなくても
+ビューア確認用に追加してよい。
 
 ---
 
-## 9. libspikehat_sim との連携
+## 9. ビューアの設定（sonar_radar_sim.py）
 
-### 9.1 概要
+`sim/sonar_radar_sim.py` がMuJoCoモデルとビューアを起動するランチャー。
+モデル固有の設定は主に以下の3か所に集中している。
 
-`libspikehat_sim` は `libspikehat` と同じAPIを持つMuJoCo版シミュレーターライブラリ。
-`sonar_radar.xml` を使うことで、`sonar_radar.py` をそのままシムで動かせる。
+### 9.1 初期カメラ
 
-```
-実機（Raspberry Pi）:  sonar_radar.py → libspikehat    → Build HAT → SPIKE Prime
-シム（Mac/Linux）:     sonar_radar.py → libspikehat_sim → MuJoCo   → sonar_radar.xml
-```
-
-### 9.2 sonar_radar_sim.py の仕組み
-
-`sonar_radar_sim.py` が `libspikehat_sim` の `SimSpikeHat` を `spikehat.SpikeHat` として差し込む：
+floor(2m四方)を含めた自動フィットだと対象（数cm）が小さく表示されるため、
+本体サイズを基準にカメラを寄せる。
 
 ```python
-# sonar_radar_sim.py
-from sim_spikehat import SimSpikeHat
-# SimSpikeHat を spikehat.SpikeHat として登録
-sys.modules["spikehat"] = ...
-# sonar_radar.py をそのまま実行
-exec(open("sonar_radar.py").read())
+_mdl.stat.center[:] = [0.0, -0.02, 0.03]
+_mdl.stat.extent = 0.12
+...
+viewer.cam.lookat[:] = _mdl.stat.center
+viewer.cam.distance  = _mdl.stat.extent * 2.5
+viewer.cam.azimuth   = 180.0
+viewer.cam.elevation = -30.0
 ```
 
-### 9.3 siteの役割
+新しいモデルでは、本体のだいたいの中心座標とサイズに合わせて `stat.center`/`stat.extent` を変更する。
 
-MuJoCo XMLに定義したsiteがセンサーの検出点として機能する：
+### 9.2 表示用 qpos の反映
 
-| site | 用途 | libspikehat_sim での使われ方 |
-|------|------|---------------------------|
-| `sonar_site` | ソナーセンサー位置 | `distance_read`: 前方レイキャスト |
-| `color_site` | カラーセンサー位置 | `color_read_hsv/rgb`: 真下レイキャスト |
+表示専用の `_dat` には物理演算（mj_step）を行わず、メインスレッド側 `libspikehat_sim` の
+実シミュレーション状態（`hat.motor_get_position` 等）を `mj_kinematics`/`mj_comPos` で
+反映するだけにする。`equality`制約はここでは評価されないため、`dome_joint` の角度も
+`motor_joint` の角度から `polycoef` と同じ式で手動計算している。
 
-### 9.4 実行方法
+```python
+_motor_rad = math.radians(_hat.motor_get_position(0))
+_dat.qpos[_motor_qadr] = _motor_rad
+_dat.qpos[_dome_qadr]  = -_motor_rad / 3.0   # equalityのpolycoefと同じ式
+```
+
+新しいモデルでギア比が変わる場合は、ここの係数も `polycoef` と合わせて変更する。
+
+### 9.3 Controlタブの操作をsimに転送
+
+`press_ctrl`/`wall_x_ctrl`/`wall_y_ctrl` のように、ビューアのControlタブで人間が操作する
+sim専用actuatorは、表示用 `_dat.ctrl` の値を毎フレーム `hat.sim_set_ctrl()` で
+実シミュレーション側に転送し、結果のqposを表示用 `_dat.qpos` に反映する。
+
+```python
+_hat.sim_set_ctrl(_press_aid, float(_dat.ctrl[_press_aid]))
+...
+_dat.qpos[_press_qadr] = _hat.sim_get_qpos(_press_qadr)
+```
+
+新しいモデルでsim専用の可動オブジェクトを追加する場合は、対応するactuator/jointの
+id取得とこの転送処理を追加する。
+
+### 9.4 実行速度（speed_scale）
+
+`--speed` のデフォルトは **1.0（実時間）固定**。実機の動作時間とsimの動作時間を
+直接比較できることが本プロジェクトの前提のため、デフォルト値は変更しない
+（[[feedback_sonar_radar_realtime_sim]] 参照）。
+
+---
+
+## 10. libspikehat_simとの連携
+
+### 10.1 概要
+
+`libspikehat_sim` は `libspikehat` と同じAPIを持つMuJoCo版シミュレーターライブラリ。
+`sonar_radar.xml` に上記のsite/sensor/actuatorを用意することで、
+`raspi/sonar_radar.py` をそのままsimで動かせる。
+
+```
+実機（Raspberry Pi）:  raspi/sonar_radar.py → libspikehat     → Build HAT → SPIKE Prime
+シム（Mac/Linux）   :  raspi/sonar_radar.py → libspikehat_sim → MuJoCo   → mujoco_model/sonar_radar.xml
+```
+
+### 10.2 sonar_radar_sim.py の仕組み
+
+`sim/sonar_radar_sim.py` が `libspikehat_sim` の `SpikeHat` を `spikehat.SpikeHat` として
+`sys.modules` に差し込み、`raspi/sonar_radar.py` を `importlib` で `__main__` として実行する
+（ファイルのコピーではなく、`raspi/sonar_radar.py` を直接参照する）。
+
+### 10.3 実行方法
 
 ```bash
-cd /path/to/sonar_radar/
-SPIKEHAT_SIM_XML=sim/sonar_radar.xml python3 sonar_radar_sim.py
+cd sonar_radar/sim
+python3 sonar_radar_sim.py                 # バッチ実行（実時間）
+mjpython sonar_radar_sim.py --viewer       # ビューア付き（推奨、実時間）
 ```
+
+`SPIKEHAT_SIM_XML` 環境変数でXMLパスを上書きできる（デフォルトは
+`mujoco_model/sonar_radar.xml`）。

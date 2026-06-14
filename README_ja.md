@@ -113,6 +113,9 @@ python3 raspi/sonar_plot.py scan.json -o scan_result.png --title "scan result"
 狭い角度範囲（この例では約-21°〜+1°）でしか壁を検出しません。この距離センサーのFOV
 （指向性）の乖離は、現時点では未解消の既知の差異です（[mujoco_model/studio_to_mujoco.md](mujoco_model/studio_to_mujoco.md)参照）。
 
+実機・SIMのスキャンデータ取得とプロット作成の手順は
+[docs/visualization.md](docs/visualization.md) を参照してください。
+
 ## キャリブレーション
 
 起動時にモーターを機械的0位置へ移動し、ギアの噛み合わせのズレを補正する

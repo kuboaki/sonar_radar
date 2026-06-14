@@ -116,6 +116,9 @@ narrow angular range directly in front (roughly -21° to +1° here). This FOV
 discrepancy between the real sensor and the simulation is a known, currently
 unaddressed difference (see [mujoco_model/studio_to_mujoco.md](mujoco_model/studio_to_mujoco.md)).
 
+See [docs/visualization.md](docs/visualization.md) for the procedure used to
+collect the real/sim scan data and generate these plots.
+
 ## Calibration
 
 On startup, the motor moves to its mechanical zero position, then rotates by

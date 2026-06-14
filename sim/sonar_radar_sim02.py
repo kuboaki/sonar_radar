@@ -8,7 +8,7 @@ sonar_radar02.py と同じ引数（現在は引数なし）。
 
 シミュレーション固有オプション:
   --viewer    ビューアを表示する（mjpython 推奨）
-  --speed N   速度スケール（デフォルト 10）
+  --speed N   速度スケール（デフォルト 1 = 実時間）
 
 【--viewer の動作】
   ┌─ mjpython で実行 ─────────────────────────────────────────────┐
@@ -43,7 +43,7 @@ import argparse
 
 _sim_parser = argparse.ArgumentParser(add_help=False)
 _sim_parser.add_argument("--viewer", action="store_true")
-_sim_parser.add_argument("--speed", type=float, default=10.0, metavar="N")
+_sim_parser.add_argument("--speed", type=float, default=1.0, metavar="N")
 _sim_args, _remaining = _sim_parser.parse_known_args()
 sys.argv = [sys.argv[0]] + _remaining
 

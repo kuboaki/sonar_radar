@@ -89,6 +89,20 @@ def _inject_spikehat(xml_path, speed_scale, hat_holder=None):
             if hat_holder is not None:
                 hat_holder.append(self)
 
+        def close(self):
+            # ビューアモードでは、sonar_radar.py の with ブロックを抜けた後も
+            # _viewer_loop（別スレッド）が同じ実体(mjModel/mjData/sim構造体)を
+            # 参照し続ける。そのため close() では実体を解放せず、
+            # 終了スイッチ操作によるモーター停止状態のまま維持する。
+            # 実体の解放は _release_for_viewer() で、_viewer_thread.join() 後に行う。
+            if hat_holder is not None:
+                return
+            super().close()
+
+        def _release_for_viewer(self):
+            """ビューアスレッド終了後に呼ぶ、実体(mjModel/mjData/sim構造体)の最終解放。"""
+            super().close()
+
     # spikehat モジュールを差し込む
     m = types.ModuleType("spikehat")
     m.SpikeHat        = _SimSpikeHat
@@ -232,6 +246,11 @@ else:
         print("[sim] スキャン完了。ウィンドウを閉じると終了します。",
               file=sys.stderr)
         _viewer_thread.join()
+
+        # _viewer_loop が同じ実体を参照し終えた後に、最終的に解放する
+        # （sonar_radar.py の close() ではこの解放を行っていない）
+        if _hat_holder:
+            _hat_holder[0]._release_for_viewer()
 
     # ---- python3: スキャン完了後に静的表示 ----
     else:

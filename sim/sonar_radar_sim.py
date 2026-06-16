@@ -17,7 +17,7 @@ sonar_radar.py と同じ引数（現在は引数なし）。
   │   通常通り動作する）                                            │
   │  ビューアの表示更新は別スレッド（表示専用、launch_passive）で   │
   │   行い、メインスレッド側の実シミュレーション状態を反映する      │
-  │  Control タブの press_ctrl を押すとスキャンが終了する           │
+  │  Controlタブのpress_ctrlを押して離すとスキャン開始/停止できる    │
   │  コマンド例: mjpython sonar_radar_sim.py --viewer           │
   └────────────────────────────────────────────────────────────────┘
   ┌─ python3 で実行 ──────────────────────────────────────────────┐
@@ -163,14 +163,22 @@ else:
             _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "press_ctrl")
         _press_qadr = _mdl.jnt_qposadr[
             mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "press_slide")]
-        _wall_x_aid = mujoco.mj_name2id(
-            _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "wall_x_ctrl")
-        _wall_y_aid = mujoco.mj_name2id(
-            _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "wall_y_ctrl")
-        _wall_x_qadr = _mdl.jnt_qposadr[
-            mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "wall_x")]
-        _wall_y_qadr = _mdl.jnt_qposadr[
-            mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "wall_y")]
+        _wall_a_x_aid = mujoco.mj_name2id(
+            _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "wall_a_x_ctrl")
+        _wall_a_y_aid = mujoco.mj_name2id(
+            _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "wall_a_y_ctrl")
+        _wall_b_x_aid = mujoco.mj_name2id(
+            _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "wall_b_x_ctrl")
+        _wall_b_y_aid = mujoco.mj_name2id(
+            _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "wall_b_y_ctrl")
+        _wall_a_x_qadr = _mdl.jnt_qposadr[
+            mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "wall_a_x")]
+        _wall_a_y_qadr = _mdl.jnt_qposadr[
+            mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "wall_a_y")]
+        _wall_b_x_qadr = _mdl.jnt_qposadr[
+            mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "wall_b_x")]
+        _wall_b_y_qadr = _mdl.jnt_qposadr[
+            mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "wall_b_y")]
 
         # sonar_radar.py 実行中に生成される SpikeHat インスタンスを受け取る
         _hat_holder = []
@@ -195,10 +203,12 @@ else:
                     if _hat_holder:
                         _hat = _hat_holder[0]
 
-                        # Controlタブの press_ctrl / wall_x_ctrl / wall_y_ctrl を実シミュレーションへ転送
-                        _hat.sim_set_ctrl(_press_aid, float(_dat.ctrl[_press_aid]))
-                        _hat.sim_set_ctrl(_wall_x_aid, float(_dat.ctrl[_wall_x_aid]))
-                        _hat.sim_set_ctrl(_wall_y_aid, float(_dat.ctrl[_wall_y_aid]))
+                        # Controlタブの各ctrlを実シミュレーションへ転送
+                        _hat.sim_set_ctrl(_press_aid,   float(_dat.ctrl[_press_aid]))
+                        _hat.sim_set_ctrl(_wall_a_x_aid, float(_dat.ctrl[_wall_a_x_aid]))
+                        _hat.sim_set_ctrl(_wall_a_y_aid, float(_dat.ctrl[_wall_a_y_aid]))
+                        _hat.sim_set_ctrl(_wall_b_x_aid, float(_dat.ctrl[_wall_b_x_aid]))
+                        _hat.sim_set_ctrl(_wall_b_y_aid, float(_dat.ctrl[_wall_b_y_aid]))
 
                         # 実シミュレーションのモーター角度を表示用に反映
                         try:
@@ -217,12 +227,16 @@ else:
                         except RuntimeError:
                             pass
 
-                        # 壁(wall_body)の位置を表示用に反映
+                        # 壁A/Bの位置を表示用に反映
                         try:
-                            _dat.qpos[_wall_x_qadr] = _hat.sim_get_qpos(_wall_x_qadr)
-                            _dat.qvel[_wall_x_qadr] = 0.0
-                            _dat.qpos[_wall_y_qadr] = _hat.sim_get_qpos(_wall_y_qadr)
-                            _dat.qvel[_wall_y_qadr] = 0.0
+                            _dat.qpos[_wall_a_x_qadr] = _hat.sim_get_qpos(_wall_a_x_qadr)
+                            _dat.qvel[_wall_a_x_qadr] = 0.0
+                            _dat.qpos[_wall_a_y_qadr] = _hat.sim_get_qpos(_wall_a_y_qadr)
+                            _dat.qvel[_wall_a_y_qadr] = 0.0
+                            _dat.qpos[_wall_b_x_qadr] = _hat.sim_get_qpos(_wall_b_x_qadr)
+                            _dat.qvel[_wall_b_x_qadr] = 0.0
+                            _dat.qpos[_wall_b_y_qadr] = _hat.sim_get_qpos(_wall_b_y_qadr)
+                            _dat.qvel[_wall_b_y_qadr] = 0.0
                         except RuntimeError:
                             pass
 
@@ -236,7 +250,7 @@ else:
         _viewer_thread = threading.Thread(target=_viewer_loop, daemon=True)
         _viewer_thread.start()
 
-        print("[sim] スキャン中です。Controlタブの press_ctrl で終了スイッチを押せます。",
+        print("[sim] Controlタブの press_ctrl を 0→0.030→0 と動かして開始トリガーを入力してください。",
               file=sys.stderr)
 
         # sonar_radar.py 本体はメインスレッドでそのまま実行する

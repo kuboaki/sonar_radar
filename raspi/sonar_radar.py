@@ -4,16 +4,19 @@ sonar_radar.py - レーダースキャナー（PWM旋回・マーカー反転版
 
 ハードウェア構成（減速ギア経由でドームを旋回）:
   ポートA(0): Lアンギュラーモーター  - ドーム旋回（ギア減速 1:3、回転方向反転）
-  ポートB(1): フォースセンサー       - 終了スイッチ
+  ポートB(1): フォースセンサー       - スタート/ストップトリガー
   ポートC(2): カラーセンサー         - 旋回端マーカー検出（赤=左端, 青=右端）
   ポートD(3): 距離センサー           - 障害物計測
 
 動作:
   1. 0位置へ旋回（return_to_origin）
-  2. PWMで旋回し、赤・青マーカーを検出したら旋回方向を反転
-  3. インターバルごとに角度と距離を記録
-  4. フォースセンサーが押されるまで 2,3 を繰り返し
-  5. 押されたら停止し、結果をJSONで出力
+  2. フォースセンサーの「押して離す」でスキャン開始
+  3. PWMで旋回し、赤・青マーカーを検出したら旋回方向を反転
+  4. インターバルごとに角度と距離を記録
+  5. フォースセンサーを再度「押して離す」とスキャン終了、結果をJSONで出力
+
+フォースセンサーはエッジ検出（押してから離したときに反応）のため、
+長押しやチャタリングによる誤動作を抑制している。
 """
 
 import sys
@@ -91,6 +94,37 @@ def is_blue(hue, sat, val):
     return BLUE_HUE_LO <= hue <= BLUE_HUE_HI
 
 
+# --- フォースセンサー -------------------------------------------------------
+MIN_PRESS_S = 0.1   # 押し時間がこれ未満はチャタリングとみなして無視
+
+
+def wait_for_force_release(hat, port):
+    """
+    フォースセンサーが「押されてから離される」まで待つ（エッジ検出）。
+    MIN_PRESS_S 未満の押しはチャタリングとみなして再待機する。
+    """
+    while True:
+        # 押されるまで待つ
+        while True:
+            try:
+                if hat.force_is_pressed(port):
+                    break
+            except RuntimeError:
+                pass
+            hat.sleep(0.02)
+        press_time = time.monotonic()
+        # 離されるまで待つ
+        while True:
+            try:
+                if not hat.force_is_pressed(port):
+                    break
+            except RuntimeError:
+                pass
+            hat.sleep(0.02)
+        if time.monotonic() - press_time >= MIN_PRESS_S:
+            return
+
+
 # --- 距離フィルタ ---
 def filter_distance(mm):
     """センサー生値を受け取り、旋回軸基準の有効距離を返す。範囲外はNone。"""
@@ -136,12 +170,13 @@ def do_continuous_scan(hat, zero_pos):
     """
     PWMで旋回しながら SAMPLE_INTERVAL_S ごとに角度と距離を記録する。
     赤・青マーカーを検出するたびに旋回方向を反転し、
-    フォースセンサーが押されたら終了する。
-    戻り値: [{"angle": int, "distance_mm": int|None}, ...]
+    フォースセンサーを「押して離す」と終了する。
+    戻り値: [{"angle": int, "dome_angle": float, "distance_mm": int|None}, ...]
     """
-    results  = []
-    scan_pwm = SCAN_PWM
+    results   = []
+    scan_pwm  = SCAN_PWM
     on_marker = False
+    force_was_pressed = False
 
     print(f"連続スキャン開始: 速度(PWM)={scan_pwm}, 間隔={SAMPLE_INTERVAL_S*1000:.0f}ms",
           file=sys.stderr)
@@ -182,11 +217,13 @@ def do_continuous_scan(hat, zero_pos):
         elapsed = time.monotonic() - START_TIME
         print(f"[{elapsed:6.2f}s] motor:{angle_label}° dome:{dome_label}° -> {label}", file=sys.stderr)
 
-        # フォースセンサー押下で終了
+        # フォースセンサーの「押して離す」でスキャン終了（エッジ検出）
         try:
-            if hat.force_is_pressed(PORT_FORCE):
-                print("フォースセンサー押下: スキャン終了", file=sys.stderr)
+            pressed = hat.force_is_pressed(PORT_FORCE)
+            if force_was_pressed and not pressed:
+                print("フォースセンサー: スキャン終了", file=sys.stderr)
                 break
+            force_was_pressed = pressed
         except RuntimeError:
             pass
 
@@ -216,6 +253,10 @@ def main():
         hat.sleep(1.0)
 
         zero_pos = calibrate(hat, PORT_MOTOR)
+
+        print("フォースセンサーを押して離すとスキャン開始します...", file=sys.stderr)
+        wait_for_force_release(hat, PORT_FORCE)
+        print("スキャン開始", file=sys.stderr)
 
         results = do_continuous_scan(hat, zero_pos)
 

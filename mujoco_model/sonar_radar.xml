@@ -9,11 +9,15 @@
   </visual>
 
   <asset>
-    <mesh name="radar_base_gray_mesh" file="radar_base_gray.stl" scale="1 1 1"/>
+    <mesh name="radar_base_panel_mesh" file="radar_base_panel.stl" scale="1 1 1"/>
+    <mesh name="radar_base_gray_mesh"  file="radar_base_gray.stl"  scale="1 1 1"/>
     <mesh name="radar_base_red_mesh"  file="radar_base_red.stl"  scale="1 1 1"/>
     <mesh name="radar_base_blue_mesh" file="radar_base_blue.stl" scale="1 1 1"/>
-    <mesh name="radar_dome_mesh"  file="radar_dome.stl"  scale="1 1 1"/>
-    <mesh name="bevel_gear_12_mesh" file="bevel_gear_12.stl" scale="1 1 1"/>
+    <mesh name="radar_dome_mesh"      file="radar_dome.stl"      scale="1 1 1"/>
+    <mesh name="bevel_gear_12_mesh"   file="bevel_gear_12.stl"   scale="1 1 1"/>
+    <mesh name="bevel_gear_36_mesh"   file="bevel_gear_36.stl"   scale="1 1 1"/>
+    <mesh name="obstacle_wall_a_mesh" file="obstacle_wall_a.stl" scale="1 1 1"/>
+    <mesh name="obstacle_wall_b_mesh" file="obstacle_wall_b.stl" scale="1 1 1"/>
   </asset>
 
   <worldbody>
@@ -26,33 +30,42 @@
     <geom name="floor" type="plane" size="1 1 0.01"
           rgba="0.6 0.6 0.6 1" contype="1" conaffinity="1"/>
 
-    <!-- 障害物: ソナーの計測範囲内（正面付近、約120mm）に配置。
-         wall_x / wall_y で水平面内を移動可能（向きは固定）。 -->
-    <body name="wall_body" pos="0.0037 -0.1203 0.04">
-      <joint name="wall_x" type="slide" axis="1 0 0" range="-0.06 0.06" damping="5.0"/>
-      <joint name="wall_y" type="slide" axis="0 1 0" range="-0.05 0.10" damping="5.0"/>
+    <!-- 壁A: 地面ブロックの穴(8mmピッチ)に合わせた初期配置。
+         wall_a_x/wall_a_y で水平面内を移動、観測域外(y方向後方)への退避可能。
+         sonar_radar08.io の obstacle_wall_a サブモデルに対応。 -->
+    <body name="wall_body_a" pos="0.0080 -0.0380 0.0000">
+      <joint name="wall_a_x" type="slide" axis="1 0 0" range="-0.08 0.08" damping="5.0"/>
+      <joint name="wall_a_y" type="slide" axis="0 1 0" range="-0.05 0.20" damping="5.0"/>
       <inertial pos="0 0 0" mass="0.05" diaginertia="0.0001 0.0001 0.0001"/>
-      <!-- 実機の壁: 幅48mm(6ポッチ)×高さ80mm(10ポッチ)、厚さは無視 -->
-      <geom name="wall" type="box"
-            size="0.024 0.005 0.04"
-            rgba="0.8 0.8 0.2 0.3"
-            contype="1" conaffinity="1"/>
+      <geom name="wall_a_geom" type="mesh" mesh="obstacle_wall_a_mesh"
+            contype="1" conaffinity="1" rgba="0.8 0.8 0.2 0.4"/>
+    </body>
+
+    <!-- 壁B: 初期は壁Aの隣。観測域外(y方向後方)へ退避可能。
+         sonar_radar08.io の obstacle_wall_b サブモデルに対応。 -->
+    <body name="wall_body_b" pos="-0.0480 -0.0796 0.0000">
+      <joint name="wall_b_x" type="slide" axis="1 0 0" range="-0.08 0.08" damping="5.0"/>
+      <joint name="wall_b_y" type="slide" axis="0 1 0" range="-0.05 0.25" damping="5.0"/>
+      <inertial pos="0 0 0" mass="0.05" diaginertia="0.0001 0.0001 0.0001"/>
+      <geom name="wall_b_geom" type="mesh" mesh="obstacle_wall_b_mesh"
+            contype="1" conaffinity="1" rgba="0.1 0.1 0.1 0.4"/>
     </body>
 
     <!-- 台座: ワールドに固定 -->
     <body name="radar_base" pos="0 0 0" euler="0 0 0">
       <inertial pos="0 0 0" mass="1.0" diaginertia="0.01 0.01 0.01"/>
-      <geom name="base_gray_geom" type="mesh" mesh="radar_base_gray_mesh"
+      <geom name="base_panel_geom" type="mesh" mesh="radar_base_panel_mesh"
+            contype="0" conaffinity="0" rgba="0.366 0.361 0.371 1"/>
+      <geom name="base_gray_geom"  type="mesh" mesh="radar_base_gray_mesh"
             contype="0" conaffinity="0" rgba="0.366 0.361 0.371 1"/>
       <geom name="base_red_geom"  type="mesh" mesh="radar_base_red_mesh"
             contype="0" conaffinity="0" rgba="0.578 0.010 0.002 1"/>
       <geom name="base_blue_geom" type="mesh" mesh="radar_base_blue_mesh"
             contype="0" conaffinity="0" rgba="0.000 0.089 0.515 1"/>
 
-      <!-- モーターローター（旋回、12Tベベルギアを保持）。
-           メッシュは libspikehat_sim/examples/test_motor.xml 側へ移動済み。
-           sonar_radar07側のモーター本体表現は別途検討する。 -->
-      <body name="motor_rotor" pos="-0.0080 -0.0238 0.0237" euler="0 0 0">
+      <!-- モーターローター（12Tベベルギアを保持）。
+           pos はblender_export_log.txtの motor_rotor 値を使用。 -->
+      <body name="motor_rotor" pos="0.0078 0.0482 0.0237" euler="0 0 0">
         <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
         <joint name="motor_joint" type="hinge" axis="0 0 1"
                damping="0.85" armature="0.001"/>
@@ -60,21 +73,32 @@
               contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>
       </body>
 
-      <!-- ドーム（36Tベベルギアを保持、motor_rotorとはギア比1:3・回転方向反転で連動） -->
-      <body name="radar_dome" pos="-0.0083 0.0007 0.0358" euler="0 0 180">
-        <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
+      <!-- 36Tベベルギア（ドーム旋回軸）。motor_rotorとギア比1:3・逆回転で連動。
+           pos は blender_export_log.txt の bevel_gear_36 値を使用。 -->
+      <body name="bevel_gear_36" pos="0.0076 0.0728 0.0300" euler="0 0 0">
+        <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
         <joint name="dome_joint" type="hinge" axis="0 0 -1"
                damping="0.1" armature="0.0005"/>
-        <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
-              contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>
-        <site name="sonar_site" pos="-0.0022 0.0247 0.0162" size="0.01" rgba="1 0 0 1"/>
-        <site name="color_site" pos="0.0035 -0.0398 0.0242" size="0.01" rgba="1 1 0 1"/>
+        <geom name="bevel_gear_36_geom" type="mesh" mesh="bevel_gear_36_mesh"
+              contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>
+
+        <!-- ドーム（bevel_gear_36と同軸で固定、ジョイントなし）。
+             euler="0 0 180" は blender_export_log.txt の Z軸回転180°に対応。
+             site pos は blender_export_log.txt のローカル座標値。 -->
+        <body name="radar_dome" pos="0 0 0" euler="0 0 180">
+          <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
+          <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
+                contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>
+          <site name="sonar_site" pos="-0.0010 0.0253 0.0227" size="0.01" rgba="1 0 0 1"/>
+          <site name="color_site" pos=" 0.0032 -0.0393 0.0291" size="0.01" rgba="1 1 0 1"/>
+        </body>
+
       </body>
 
     </body>
 
-    <!-- 終了スイッチ（フォースセンサー）: sonar_radar.py のスキャン終了トリガー。
-         Controlタブの press_ctrl を動かして押すとスキャンが終了する。 -->
+    <!-- フォースセンサー（スタート/ストップトリガー）。
+         press_ctrl でpress_bodyを押し下げ、離すとスキャン開始または停止。 -->
     <body name="force_sensor_body" pos="0.10 0 0.010">
       <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
       <geom name="force_sensor_geom" type="box" pos="0 0 0" size="0.015 0.015 0.005"
@@ -88,6 +112,7 @@
       <geom name="press_geom" type="box" pos="0 0 0" size="0.012 0.012 0.005"
             rgba="0.8 0.3 0.3 1" contype="1" conaffinity="1"/>
     </body>
+
   </worldbody>
 
   <equality>
@@ -98,12 +123,16 @@
   <actuator>
     <motor name="turret_motor" joint="motor_joint"
            gear="10" ctrllimited="true" ctrlrange="-1 1"/>
-    <position name="press_ctrl" joint="press_slide"
+    <position name="press_ctrl"   joint="press_slide"
               kp="50" ctrllimited="true" ctrlrange="0.0 0.030"/>
-    <position name="wall_x_ctrl" joint="wall_x"
-              kp="50" ctrllimited="true" ctrlrange="-0.06 0.06"/>
-    <position name="wall_y_ctrl" joint="wall_y"
-              kp="50" ctrllimited="true" ctrlrange="-0.05 0.10"/>
+    <position name="wall_a_x_ctrl" joint="wall_a_x"
+              kp="50" ctrllimited="true" ctrlrange="-0.08 0.08"/>
+    <position name="wall_a_y_ctrl" joint="wall_a_y"
+              kp="50" ctrllimited="true" ctrlrange="-0.05 0.20"/>
+    <position name="wall_b_x_ctrl" joint="wall_b_x"
+              kp="50" ctrllimited="true" ctrlrange="-0.08 0.08"/>
+    <position name="wall_b_y_ctrl" joint="wall_b_y"
+              kp="50" ctrllimited="true" ctrlrange="-0.05 0.25"/>
   </actuator>
 
   <sensor>
@@ -112,12 +141,12 @@
     <jointvel  name="turret_vel"   joint="motor_joint"/>
     <jointpos  name="dome_angle"   joint="dome_joint"/>
     <jointvel  name="dome_vel"     joint="dome_joint"/>
-    <!-- センサー位置・姿勢（ソナー取り付け面） -->
+    <!-- センサー位置・姿勢 -->
     <framepos  name="sonar_pos"  objtype="site" objname="sonar_site"/>
     <framequat name="sonar_quat" objtype="site" objname="sonar_site"/>
     <framepos  name="color_pos"  objtype="site" objname="color_site"/>
     <framequat name="color_quat" objtype="site" objname="color_site"/>
-    <!-- 終了スイッチ -->
+    <!-- スタート/ストップトリガー -->
     <touch name="force_touch" site="force_site"/>
   </sensor>
 

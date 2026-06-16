@@ -466,3 +466,63 @@ mjpython sonar_radar_sim.py --viewer       # ビューア付き（推奨、実�
 
 `SPIKEHAT_SIM_XML` 環境変数でXMLパスを上書きできる（デフォルトは
 `mujoco_model/sonar_radar.xml`）。
+
+---
+
+## 11. Studioモデルを変更したときの影響範囲
+
+Studioモデルを変更した場合、変更の種類によって必要な作業が異なる。
+
+### 11.1 影響範囲サマリー
+
+| 変更の種類 | STL再生成 | XML変更 | アプリコード変更 |
+|---|:---:|:---:|:---:|
+| 固定部品の追加・削除 | 要 | 不要 | 不要 |
+| 可動部の形状変更 | 要 | 要（pos） | 不要 |
+| センサーの取り付け位置変更 | 要 | 要（site） | 不要 |
+| ギア比の変更 | 要 | 要（equality） | 要（3箇所） |
+| 新しい可動部の追加 | 要 | 要（joint等） | 要（sim.py） |
+
+### 11.2 変更別の作業内容
+
+#### 固定部品の追加・削除（例：台座に飾りパーツを追加）
+
+1. `blender_export.py` を再実行してSTLを再生成
+2. `radar_base_gray.stl` 等を使い続ける場合はXML変更不要（自動反映）
+3. ただし `shared_offset`（全パーツのbboxから計算）が変わるため、
+   赤・青マーカー等の位置関係がずれていないかビューアで確認する
+
+#### 可動部の形状変更（例：ドーム形状を変更）
+
+1. 対応するSTLを再生成（例：`radar_dome.stl`）
+2. `body pos` の再調整が必要になる場合あり（重心・サイズの変化による）
+3. センサーsite（`sonar_site`/`color_site`）の位置を再確認・微調整
+   （[7. センサーsiteの配置調整](#7-センサーsiteの配置調整)の手順を再実施）
+
+#### センサーの取り付け位置変更（例：距離センサーの位置を変える）
+
+1. STL再生成（`blender_export.py`）
+2. `compute_local_site_pos` がsite位置の初期値を自動計算してログに出力する
+3. ビューアで実測値と見比べながら `<site pos="..."/>` を微調整
+   （`docs/visualization.md` の手順で検出角度を確認する）
+
+#### ギア比の変更（例：12T-36T → 12T-24T）
+
+影響が最も広い。以下の3箇所を**一致させる**こと。
+
+| ファイル | 変更箇所 | 例（1:2に変更） |
+|---|---|---|
+| `mujoco_model/sonar_radar.xml` | `<equality>` の `polycoef` | `"0 -0.5 0 0 0"` |
+| `sim/sonar_radar_sim.py` | `_viewer_loop` 内のドーム角度計算 | `-_motor_rad / 2.0` |
+| `raspi/sonar_radar.py` | `GEAR_RATIO` 定数 | `GEAR_RATIO = 2` |
+
+> **注意：** 回転方向の反転は `polycoef` の符号ではなく `dome_joint` の
+> `axis` で調整する（[[feedback_mujoco_hinge_axis_vs_equality_sign]]）。
+
+#### 新しい可動部の追加（例：新センサーを別軸で追加）
+
+1. Studio側でサブモデルを追加・STLを再生成
+2. XMLに `<body>` / `<joint>` / `<actuator>` / `<sensor>` を追加（§6〜§8参照）
+3. `sim/sonar_radar_sim.py` の `_viewer_loop` に新しいjoint/actuatorの
+   id取得とqpos反映処理を追加（§9.2〜9.3参照）
+4. 新センサーを `raspi/sonar_radar.py` から使う場合はアプリコードも更新

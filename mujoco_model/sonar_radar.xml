@@ -35,7 +35,7 @@
          sonar_radar08.io の obstacle_wall_a サブモデルに対応。 -->
     <body name="wall_body_a" pos="0.0080 -0.0380 0.0000">
       <joint name="wall_a_x" type="slide" axis="1 0 0" range="-0.08 0.08" damping="5.0"/>
-      <joint name="wall_a_y" type="slide" axis="0 1 0" range="-0.05 0.20" damping="5.0"/>
+      <joint name="wall_a_y" type="slide" axis="0 1 0" range="-0.080 0.20" damping="5.0"/>
       <inertial pos="0 0 0" mass="0.05" diaginertia="0.0001 0.0001 0.0001"/>
       <geom name="wall_a_geom" type="mesh" mesh="obstacle_wall_a_mesh"
             contype="1" conaffinity="1" rgba="0.8 0.8 0.2 0.4"/>
@@ -44,8 +44,8 @@
     <!-- 壁B: 初期は壁Aの隣。観測域外(y方向後方)へ退避可能。
          sonar_radar08.io の obstacle_wall_b サブモデルに対応。 -->
     <body name="wall_body_b" pos="-0.0480 -0.0796 0.0000">
-      <joint name="wall_b_x" type="slide" axis="1 0 0" range="-0.08 0.08" damping="5.0"/>
-      <joint name="wall_b_y" type="slide" axis="0 1 0" range="-0.05 0.25" damping="5.0"/>
+      <joint name="wall_b_x" type="slide" axis="1 0 0" range="-0.08 0.136" damping="5.0"/>
+      <joint name="wall_b_y" type="slide" axis="0 1 0" range="-0.040 0.25" damping="5.0"/>
       <inertial pos="0 0 0" mass="0.05" diaginertia="0.0001 0.0001 0.0001"/>
       <geom name="wall_b_geom" type="mesh" mesh="obstacle_wall_b_mesh"
             contype="1" conaffinity="1" rgba="0.1 0.1 0.1 0.4"/>
@@ -62,6 +62,21 @@
             contype="0" conaffinity="0" rgba="0.578 0.010 0.002 1"/>
       <geom name="base_blue_geom" type="mesh" mesh="radar_base_blue_mesh"
             contype="0" conaffinity="0" rgba="0.000 0.089 0.515 1"/>
+
+      <!-- モーター・ドーム柱まわりの衝突ガード（壁が侵入しないようにする）。
+           位置・サイズはビューアで確認して調整すること。
+           確認後は rgba の alpha を 0 にして不可視化する。 -->
+      <!-- モーター柱（motor_rotor 周辺）のガード -->
+      <!-- ガードジオムは薄いスラブ（高さ4mm）にして、センサーのレイキャストが
+           通過する高さ（30mm以上）に干渉しないようにする -->
+      <!-- モーター柱（motor_rotor 周辺）のガード -->
+      <geom name="radar_column_guard" type="box"
+            pos="0.008 0.060 0.002" size="0.030 0.030 0.002"
+            contype="1" conaffinity="1" rgba="0.9 0.5 0.1 0.3"/>
+      <!-- ドーム旋回範囲ガード: bevel_gear_36 軸中心の円柱 -->
+      <geom name="dome_sweep_guard" type="cylinder"
+            pos="0.0076 0.0728 0.002" size="0.040 0.002"
+            contype="1" conaffinity="1" rgba="0.5 0.8 0.9 0.3"/>
 
       <!-- モーターローター（12Tベベルギアを保持）。
            pos はblender_export_log.txtの motor_rotor 値を使用。 -->
@@ -128,11 +143,11 @@
     <position name="wall_a_x_ctrl" joint="wall_a_x"
               kp="50" ctrllimited="true" ctrlrange="-0.08 0.08"/>
     <position name="wall_a_y_ctrl" joint="wall_a_y"
-              kp="50" ctrllimited="true" ctrlrange="-0.05 0.20"/>
+              kp="50" ctrllimited="true" ctrlrange="-0.080 0.20"/>
     <position name="wall_b_x_ctrl" joint="wall_b_x"
-              kp="50" ctrllimited="true" ctrlrange="-0.08 0.08"/>
+              kp="50" ctrllimited="true" ctrlrange="-0.08 0.136"/>
     <position name="wall_b_y_ctrl" joint="wall_b_y"
-              kp="50" ctrllimited="true" ctrlrange="-0.05 0.25"/>
+              kp="50" ctrllimited="true" ctrlrange="-0.040 0.25"/>
   </actuator>
 
   <sensor>

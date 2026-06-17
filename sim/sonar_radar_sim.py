@@ -153,6 +153,23 @@ else:
     # mjpython かどうか判定
     _IS_MJPYTHON = getattr(mujoco.viewer, '_MJPYTHON', None) is not None
 
+    _WALL_STUD = 0.008  # 壁移動の最小単位: 1スタッドピッチ = 8mm
+
+    # 壁のctrlrange（sonar_radar.xmlのctrlrangeと一致させること）
+    _WALL_A_X_RANGE = (-0.08,  0.08)
+    _WALL_A_Y_RANGE = (-0.080, 0.20)
+    _WALL_B_X_RANGE = (-0.08,  0.136)
+    _WALL_B_Y_RANGE = (-0.040, 0.25)
+
+    def _snap_stud(val):
+        """壁のctrl値をスタッドピッチ単位に丸める"""
+        return round(val / _WALL_STUD) * _WALL_STUD
+
+    def _wall_step(aid, delta, ctrl_range):
+        """壁のctrl値を1スタッド単位で増減しclampする（key_callbackから呼ぶ）"""
+        cur = _snap_stud(float(_dat.ctrl[aid]))
+        _dat.ctrl[aid] = max(ctrl_range[0], min(ctrl_range[1], cur + delta))
+
     # ---- mjpython: launch_passive でリアルタイム表示 ----
     if _IS_MJPYTHON:
         _motor_qadr = _mdl.jnt_qposadr[
@@ -184,6 +201,41 @@ else:
         _hat_holder = []
         _inject_spikehat(_xml_path, _sim_args.speed, _hat_holder)
 
+        # GLFW キーコード
+        _KEY_RIGHT = 262
+        _KEY_LEFT  = 263
+        _KEY_DOWN  = 264
+        _KEY_UP    = 265
+
+        # 操作対象の壁: 0=黄色(wall_a), 1=黒(wall_b)
+        _selected_wall = [0]
+
+        def _key_callback(keycode):
+            """
+            キーボードで壁を1スタッド単位移動する。
+              1         : 黄色壁(wall_a)を選択
+              2         : 黒壁(wall_b)を選択
+              矢印キー ← → : 選択中の壁 X方向
+              矢印キー ↑ ↓ : 選択中の壁 Y方向（↑=壁方向、↓=退避方向）
+            """
+            s = _WALL_STUD
+            if keycode == ord('1'):
+                _selected_wall[0] = 0
+                print("[sim] 黄色壁(wall_a)を選択", file=sys.stderr)
+            elif keycode == ord('2'):
+                _selected_wall[0] = 1
+                print("[sim] 黒壁(wall_b)を選択", file=sys.stderr)
+            elif _selected_wall[0] == 0:
+                if   keycode == _KEY_RIGHT: _wall_step(_wall_a_x_aid, +s, _WALL_A_X_RANGE)
+                elif keycode == _KEY_LEFT:  _wall_step(_wall_a_x_aid, -s, _WALL_A_X_RANGE)
+                elif keycode == _KEY_UP:    _wall_step(_wall_a_y_aid, +s, _WALL_A_Y_RANGE)
+                elif keycode == _KEY_DOWN:  _wall_step(_wall_a_y_aid, -s, _WALL_A_Y_RANGE)
+            else:
+                if   keycode == _KEY_RIGHT: _wall_step(_wall_b_x_aid, +s, _WALL_B_X_RANGE)
+                elif keycode == _KEY_LEFT:  _wall_step(_wall_b_x_aid, -s, _WALL_B_X_RANGE)
+                elif keycode == _KEY_UP:    _wall_step(_wall_b_y_aid, +s, _WALL_B_Y_RANGE)
+                elif keycode == _KEY_DOWN:  _wall_step(_wall_b_y_aid, -s, _WALL_B_Y_RANGE)
+
         def _viewer_loop():
             """
             表示専用のループ（別スレッド）。
@@ -191,7 +243,7 @@ else:
             状態を取得し、表示用の _mdl/_dat に反映して sync() するだけ。
             物理計算（mj_step）は行わない。
             """
-            with mujoco.viewer.launch_passive(_mdl, _dat) as viewer:
+            with mujoco.viewer.launch_passive(_mdl, _dat, key_callback=_key_callback) as viewer:
                 # floor(2m四方)込みの自動フィットだと小さく表示されるため、
                 # レーダー本体(数cm)を基準にカメラを寄せる
                 viewer.cam.lookat[:] = _mdl.stat.center
@@ -204,11 +256,12 @@ else:
                         _hat = _hat_holder[0]
 
                         # Controlタブの各ctrlを実シミュレーションへ転送
-                        _hat.sim_set_ctrl(_press_aid,   float(_dat.ctrl[_press_aid]))
-                        _hat.sim_set_ctrl(_wall_a_x_aid, float(_dat.ctrl[_wall_a_x_aid]))
-                        _hat.sim_set_ctrl(_wall_a_y_aid, float(_dat.ctrl[_wall_a_y_aid]))
-                        _hat.sim_set_ctrl(_wall_b_x_aid, float(_dat.ctrl[_wall_b_x_aid]))
-                        _hat.sim_set_ctrl(_wall_b_y_aid, float(_dat.ctrl[_wall_b_y_aid]))
+                        # 壁はスタッドピッチ単位にスナップして転送
+                        _hat.sim_set_ctrl(_press_aid,    float(_dat.ctrl[_press_aid]))
+                        _hat.sim_set_ctrl(_wall_a_x_aid, _snap_stud(_dat.ctrl[_wall_a_x_aid]))
+                        _hat.sim_set_ctrl(_wall_a_y_aid, _snap_stud(_dat.ctrl[_wall_a_y_aid]))
+                        _hat.sim_set_ctrl(_wall_b_x_aid, _snap_stud(_dat.ctrl[_wall_b_x_aid]))
+                        _hat.sim_set_ctrl(_wall_b_y_aid, _snap_stud(_dat.ctrl[_wall_b_y_aid]))
 
                         # 実シミュレーションのモーター角度を表示用に反映
                         try:
@@ -251,6 +304,8 @@ else:
         _viewer_thread.start()
 
         print("[sim] Controlタブの press_ctrl を 0→0.030→0 と動かして開始トリガーを入力してください。",
+              file=sys.stderr)
+        print("[sim] 壁の移動: 1=黄色壁選択 / 2=黒壁選択  矢印キー(←→X / ↑↓Y)で移動",
               file=sys.stderr)
 
         # sonar_radar.py 本体はメインスレッドでそのまま実行する

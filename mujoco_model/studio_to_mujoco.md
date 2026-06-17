@@ -53,10 +53,10 @@ MuJoCoのSTLメッシュは単色しか指定できない。複数色を再現�
 > メッシュは `libspikehat_sim/examples/test_motor.xml` 側に切り出され、
 > `sonar_radar.xml` には含まれない。
 
-### 1.2 サブモデルの構造例（sonar_radar07）
+### 1.2 サブモデルの構造例（sonar_radar08）
 
 ```
-sonar_radar07.io
+sonar_radar08.io
 ├── radar_base          … 台座グレーパーツ
 │   ├── marker_blue     … 青マーカー（サブモデル）
 │   │   ├── 3713.dat    … ブッシュ（グレー）
@@ -65,7 +65,9 @@ sonar_radar07.io
 │       ├── 3713.dat    … ブッシュ（グレー）
 │       └── 39789.dat   … マーカーブロック（赤）
 ├── radar_dome          … ドーム一式（36Tベベルギア32498.dat、距離/カラーセンサー含む）
-└── bevel_gear_12       … モーター側12Tベベルギア（旋回軸=このサブモデル原点）
+├── bevel_gear_12       … モーター側12Tベベルギア（旋回軸=このサブモデル原点）
+├── obstacle_wall_a     … 障害物壁A（黄色、独立サブモデル）
+└── obstacle_wall_b     … 障害物壁B（黒、独立サブモデル）
 ```
 
 ---
@@ -312,15 +314,46 @@ equality制約で連動させる（[6.3](#63-equality制約によるギア連動
 
 ```xml
 <equality>
-  <!-- ベベルギア(12T-36T)噛み合い: dome_joint = -motor_joint / 3 -->
-  <joint joint1="dome_joint" joint2="motor_joint" polycoef="0 -0.33333333 0 0 0"/>
+  <!-- ベベルギア(12T-36T)噛み合い: dome_joint = +motor_joint / 3
+       motor_joint axis="0 0 -1"(正=CW), dome_joint axis="0 0 1"(正=CCW)
+       CWモーターに対してCCWドーム → polycoef正 -->
+  <joint joint1="dome_joint" joint2="motor_joint" polycoef="0 0.33333333 0 0 0"/>
 </equality>
 ```
+
+**motor/dome の axis 設定（sonar_radar08 実機確認済み）:**
+
+| joint | axis | 正方向の意味 |
+|---|---|---|
+| `motor_joint`（12T, motor_rotor） | `0 0 -1` | 正 = CW（時計回り）= 実機の正エンコーダ方向 |
+| `dome_joint`（36T, bevel_gear_36） | `0 0 1` | 正 = CCW（反時計回り）= 実機の正PWM時のドーム旋回方向 |
+
+実機確認：正PWM → エンコーダ正 → モーターCW → ドームCCW（ベベルギアで逆転）。
 
 > **回転方向の調整は `axis` で行う。** `polycoef` の符号を変えて回転方向を反転させると、
 > 一見動くが速度比などで不整合が生じることがある。回転方向の反転は
 > `<joint ... axis="0 0 -1" .../>` のように joint の `axis` 側で行い、
 > `polycoef` はギア比（絶対値）のみを表す、という分担にする。
+
+### 6.4 衝突ガードジオム
+
+壁がモーター柱やドーム旋回範囲に侵入しないよう、`radar_base` body に薄いスラブ型
+ガードジオムを追加する。
+
+```xml
+<!-- 高さ4mm（Z=0〜4mm）の薄スラブにして、センサーのレイキャスト高さ（30mm以上）に干渉しない -->
+<geom name="radar_column_guard" type="box"
+      pos="0.008 0.060 0.002" size="0.030 0.030 0.002"
+      contype="1" conaffinity="1" rgba="0.9 0.5 0.1 0.3"/>
+<geom name="dome_sweep_guard" type="cylinder"
+      pos="0.0076 0.0728 0.002" size="0.040 0.002"
+      contype="1" conaffinity="1" rgba="0.5 0.8 0.9 0.3"/>
+```
+
+> ガードを全高のboxやcylinderにすると `mj_ray`（NULL geomgroup）がセンサーレイキャストの
+> 対象に含まれてしまい、カラーセンサーがマーカーより先にガードに当たる問題が発生する。
+> `libspikehat_sim` 側にモデル固有の geomgroup フィルタを追加してはならない
+> （汎用ライブラリとしての設計原則）ため、ガード側を薄くして高さで回避する。
 
 ---
 
@@ -353,12 +386,27 @@ site位置の調整は、6.2の本体位置(pos)調整と相互に影響する�
 |---|---|---|---|
 | `turret_motor` | `motor_joint` | motor（トルク, gear=10） | `motor_pwm`/`motor_run_to_position` で旋回 |
 | `press_ctrl` | `press_slide` | position | 終了スイッチ(`press_body`)を押す（ビューア操作用） |
-| `wall_x_ctrl` | `wall_x` | position | 障害物(`wall_body`)のX位置（ビューア操作用） |
-| `wall_y_ctrl` | `wall_y` | position | 障害物(`wall_body`)のY位置（ビューア操作用） |
+| `wall_a_x_ctrl` | `wall_a_x` | position | 壁A（黄色）のX位置（ビューア操作用） |
+| `wall_a_y_ctrl` | `wall_a_y` | position | 壁A（黄色）のY位置（ビューア操作用） |
+| `wall_b_x_ctrl` | `wall_b_x` | position | 壁B（黒）のX位置（ビューア操作用） |
+| `wall_b_y_ctrl` | `wall_b_y` | position | 壁B（黒）のY位置（ビューア操作用） |
 
 `turret_motor` のみがアプリケーションコード（`sonar_radar.py`）から操作される。
-他の3つは**ビューアのControlタブから人間が操作する**ためのもので、実機には存在しない
+他は**ビューアのControlタブから人間が操作する**ためのもので、実機には存在しない
 sim専用のオブジェクト（壁・終了スイッチ）を動かすために用意している。
+
+**壁のキーボード操作（sonar_radar_sim.py）:**
+
+| キー | 動作 |
+|---|---|
+| `1` | 壁A（黄色）を選択 |
+| `2` | 壁B（黒）を選択 |
+| `←` / `→` | 選択中の壁をX方向に1スタッド（8mm）移動 |
+| `↑` / `↓` | 選択中の壁をY方向に1スタッド（8mm）移動 |
+
+MuJoCo ビューアの組み込みショートカット（A/D/W/S/F 等）と競合するため、
+WASDキーは使用しない。矢印キーは `key_callback` で `_KEY_RIGHT/LEFT/UP/DOWN`
+（GLFW keycode 262〜265）として取得する。
 
 ### 8.2 sensor一覧
 
@@ -409,7 +457,7 @@ viewer.cam.elevation = -30.0
 ```python
 _motor_rad = math.radians(_hat.motor_get_position(0))
 _dat.qpos[_motor_qadr] = _motor_rad
-_dat.qpos[_dome_qadr]  = -_motor_rad / 3.0   # equalityのpolycoefと同じ式
+_dat.qpos[_dome_qadr]  = +_motor_rad / 3.0   # equalityのpolycoefと同じ式（符号は6.3参照）
 ```
 
 新しいモデルでギア比が変わる場合は、ここの係数も `polycoef` と合わせて変更する。
@@ -425,6 +473,10 @@ _hat.sim_set_ctrl(_press_aid, float(_dat.ctrl[_press_aid]))
 ...
 _dat.qpos[_press_qadr] = _hat.sim_get_qpos(_press_qadr)
 ```
+
+壁のように複数のsim専用オブジェクトがある場合は、それぞれに同様の転送処理を追加する。
+壁の移動はControlタブのスライダーに加え、キーボードコールバック（`key_callback`）からも
+`_dat.ctrl` を直接書き換えることで操作できる（8.1参照）。
 
 新しいモデルでsim専用の可動オブジェクトを追加する場合は、対応するactuator/jointの
 id取得とこの転送処理を追加する。

@@ -82,7 +82,7 @@
            pos はblender_export_log.txtの motor_rotor 値を使用。 -->
       <body name="motor_rotor" pos="0.0078 0.0482 0.0237" euler="0 0 0">
         <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
-        <joint name="motor_joint" type="hinge" axis="0 0 1"
+        <joint name="motor_joint" type="hinge" axis="0 0 -1"
                damping="0.85" armature="0.001"/>
         <geom name="bevel_gear_12_geom" type="mesh" mesh="bevel_gear_12_mesh"
               contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>
@@ -92,7 +92,7 @@
            pos は blender_export_log.txt の bevel_gear_36 値を使用。 -->
       <body name="bevel_gear_36" pos="0.0076 0.0728 0.0300" euler="0 0 0">
         <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
-        <joint name="dome_joint" type="hinge" axis="0 0 -1"
+        <joint name="dome_joint" type="hinge" axis="0 0 1"
                damping="0.1" armature="0.0005"/>
         <geom name="bevel_gear_36_geom" type="mesh" mesh="bevel_gear_36_mesh"
               contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>
@@ -131,8 +131,10 @@
   </worldbody>
 
   <equality>
-    <!-- ベベルギア(12T-36T)噛み合い: dome_joint = -motor_joint / 3 -->
-    <joint joint1="dome_joint" joint2="motor_joint" polycoef="0 -0.33333333 0 0 0"/>
+    <!-- ベベルギア(12T-36T)噛み合い: dome_joint = +motor_joint / 3
+         motor_joint axis="0 0 -1"(正=CW), dome_joint axis="0 0 1"(正=CCW)
+         CWモーターに対してCCWドーム → polycoef正 -->
+    <joint joint1="dome_joint" joint2="motor_joint" polycoef="0 0.33333333 0 0 0"/>
   </equality>
 
   <actuator>

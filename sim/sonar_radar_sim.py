@@ -267,7 +267,7 @@ else:
                         try:
                             _motor_rad = math.radians(_hat.motor_get_position(0))
                             _dat.qpos[_motor_qadr] = _motor_rad
-                            _dat.qpos[_dome_qadr]  = -_motor_rad / 3.0
+                            _dat.qpos[_dome_qadr]  = +_motor_rad / 3.0
                             _dat.qvel[_motor_qadr] = 0.0
                             _dat.qvel[_dome_qadr]  = 0.0
                         except RuntimeError:

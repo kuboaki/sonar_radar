@@ -54,13 +54,36 @@ bash run.sh
 
 ## シミュレーションでの実行（MuJoCo）
 
-- macOS / Linux に `mujoco` と `libspikehat_sim`（`sim/libspikehat_sim/` 参照）がインストール済みであること
-- macOSのビューア表示には `mjpython`（MuJoCoのpassive viewerに必要）を使用
+### セットアップ（初回のみ）
+
+**前提**
+- macOS + Homebrew の Python 3.12（`brew install python@3.12`）
+- [uv](https://docs.astral.sh/uv/) インストール済み（`brew install uv`）
+
+**1. venv作成とmujocoインストール**
 
 ```bash
-cd sim
-python3 sonar_radar_sim.py            # バッチ実行（結果のJSONを標準出力へ）
-mjpython sonar_radar_sim.py --viewer  # 3Dビューア付き・実時間
+cd sonar_radar   # リポジトリルート
+uv venv --python /opt/homebrew/bin/python3.12
+uv pip install mujoco
+```
+
+> **注意**: uv管理のスタンドアロンPython（`~/.local/share/uv/python/`）では
+> `mjpython` が動作しません。必ずHomebrew製Pythonを使用してください。
+
+**2. libspikehat_simのビルド**
+
+```bash
+MUJOCO_ROOT=$(.venv/bin/python3 -c "import mujoco, os; print(os.path.dirname(mujoco.__file__))") \
+  cmake -B sim/libspikehat_sim/build -S sim/libspikehat_sim
+cmake --build sim/libspikehat_sim/build
+```
+
+### 実行
+
+```bash
+uv run python3 sim/sonar_radar_sim.py            # バッチ実行（結果のJSONを標準出力へ）
+uv run mjpython sim/sonar_radar_sim.py --viewer  # 3Dビューア付き・実時間
 ```
 
 `sonar_radar_sim.py` は、MuJoCoで動作するシミュレーション版 `spikehat` モジュールを

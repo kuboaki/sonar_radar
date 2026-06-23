@@ -14,6 +14,8 @@
     <mesh name="radar_base_red_mesh"  file="radar_base_red.stl"  scale="1 1 1"/>
     <mesh name="radar_base_blue_mesh" file="radar_base_blue.stl" scale="1 1 1"/>
     <mesh name="radar_dome_mesh"      file="radar_dome.stl"      scale="1 1 1"/>
+    <mesh name="sonar_sensor_mesh"    file="sonar_sensor.stl"    scale="1 1 1"/>
+    <mesh name="color_sensor_mesh"    file="color_sensor.stl"    scale="1 1 1"/>
     <mesh name="bevel_gear_12_mesh"   file="bevel_gear_12.stl"   scale="1 1 1"/>
     <mesh name="bevel_gear_36_mesh"   file="bevel_gear_36.stl"   scale="1 1 1"/>
     <mesh name="obstacle_wall_a_mesh" file="obstacle_wall_a.stl" scale="1 1 1"/>
@@ -100,12 +102,20 @@
         <!-- ドーム（bevel_gear_36と同軸で固定、ジョイントなし）。
              euler="0 0 180" は blender_export_log.txt の Z軸回転180°に対応。
              site pos は blender_export_log.txt のローカル座標値。 -->
-        <body name="radar_dome" pos="0 0 0" euler="0 0 180">
+        <body name="radar_dome" pos="0 0 0" euler="0 0 0">
           <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
           <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
                 contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>
-          <site name="sonar_site" pos="-0.0010 0.0253 0.0227" size="0.01" rgba="1 0 0 1"/>
-          <site name="color_site" pos=" 0.0032 -0.0393 0.0291" size="0.01" rgba="1 1 0 1"/>
+          <body name="sonar_sensor" pos="0.0010 -0.0093 0.0227" euler="0 0 180">
+            <geom name="sonar_geom" type="mesh" mesh="sonar_sensor_mesh"
+                  contype="0" conaffinity="0" rgba="0.3 0.3 0.8 1"/>
+            <site name="sonar_site" pos="0 0.012 0" size="0.01" rgba="1 0 0 1"/>
+          </body>
+          <body name="color_sensor" pos="-0.0032 0.0393 0.0387">
+            <geom name="color_geom" type="mesh" mesh="color_sensor_mesh"
+                  contype="0" conaffinity="0" rgba="0.8 0.8 0.2 1"/>
+            <site name="color_site" pos="0 0 -0.0096" size="0.01" rgba="1 1 0 1"/>
+          </body>
         </body>
 
       </body>

@@ -50,8 +50,8 @@ import sys
 import numpy as np
 from stl import mesh as stl_mesh
 
-OUTPUT_DIR = "/Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/meshes"
-LOG_PATH   = "/Users/kuboaki/Documents/projects/sonar_radar/mujoco_model/blender/blender_export_log.txt"
+OUTPUT_DIR = "/Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes"
+LOG_PATH   = "/Users/kuboaki/Projects/sonar_radar/mujoco_model/blender/blender_export_log.txt"
 SCALE = 0.0004  # LDU → m
 
 
@@ -382,62 +382,91 @@ PLATE_H    = 8  * SCALE   # 1プレート高さ = 8 LDU = 3.2mm = 0.0032m
 STUD_PITCH = 20 * SCALE   # 水平方向1スタッドピッチ = 20 LDU = 8mm = 0.008m
 
 
-def compute_local_site_pos(obj, rotor_axis_obj, rotate_z_deg, y_offset_m=0.0, z_offset_m=0.0):
+def compute_local_body_pos(obj, rotor_axis_obj):
     """
-    obj の位置を rotor_axis_obj 中心の body ローカル座標（MJCF site pos、単位 m）に変換する。
-    y_offset_m: センサーパーツのオブジェクト原点からセンサー面までのY方向オフセット（m）。
-                正値 = 壁方向（センサーの計測方向）
-    z_offset_m: Z方向オフセット（m）。負値 = 下方向。
+    obj の原点位置を rotor_axis_obj 中心の dome body ローカル座標（MJCF pos、単位 m）に変換する。
+    センサーを独立 body として配置するときの pos 値を求める。
     """
     ax  = rotor_axis_obj.matrix_world.translation
     pos = obj.matrix_world.translation
     x, y, z = pos.x - ax.x, pos.y - ax.y, pos.z - ax.z
+    return -x * SCALE, -y * SCALE, z * SCALE
 
-    angle = math.radians(rotate_z_deg)
-    cos_a, sin_a = math.cos(angle), math.sin(angle)
-    rx = cos_a * x - sin_a * y
-    ry = sin_a * x + cos_a * y
+# ── センサーオブジェクト取得 ──────────────────────────────
 
-    return -rx * SCALE, -ry * SCALE + y_offset_m, z * SCALE + z_offset_m
+sonar_obj = bpy.data.objects.get("37316c01.dat")
+color_obj = bpy.data.objects.get("37308c01.dat")
+sensor_names = {o.name for o in [sonar_obj, color_obj] if o}
 
-# ── radar_dome エクスポート ───────────────────────────────
+# ── radar_dome エクスポート（センサーを除外） ─────────────
 # rotor_axis_obj = bevel_gear_36 EMPTY（旧版の32498.datと同じ旋回軸位置）
 
 print("\n" + "=" * 60)
-print("radar_dome 処理")
+print("radar_dome 処理（センサー除外）")
 print("=" * 60)
 
 print(f"  旋回軸オブジェクト(bevel_gear_36 EMPTY): {'OK' if gear36_root else 'NOT FOUND → center にフォールバック'}")
 
+dome_meshes_no_sensor = [m for m in dome_meshes if m.name not in sensor_names]
+print(f"  センサー除外: {len(dome_meshes)} → {len(dome_meshes_no_sensor)} MESH")
+
 dome_result = export_stl(
-    meshes         = dome_meshes,
+    meshes         = dome_meshes_no_sensor,
     name           = "radar_dome",
     center_mode    = "rotor_axis" if gear36_root else "center",
-    rotate_z_deg   = 180.0,
+    rotate_z_deg   = 0.0,
     rotor_axis_obj = gear36_root,
     out_filename   = "radar_dome.stl",
 )
 
+# ── sonar_sensor エクスポート ─────────────────────────────
+
+print("\n" + "=" * 60)
+print("sonar_sensor 処理")
+print("=" * 60)
+
+if sonar_obj:
+    sonar_meshes = [sonar_obj] + [c for c in sonar_obj.children_recursive if c.type == 'MESH']
+    export_stl(
+        meshes         = sonar_meshes,
+        name           = "sonar_sensor",
+        center_mode    = "rotor_axis",
+        rotate_z_deg   = 180.0,
+        rotor_axis_obj = sonar_obj,
+        out_filename   = "sonar_sensor.stl",
+    )
+else:
+    print("  WARNING: 37316c01.dat (距離センサー) が見つかりません")
+
+# ── color_sensor エクスポート ─────────────────────────────
+
+print("\n" + "=" * 60)
+print("color_sensor 処理")
+print("=" * 60)
+
+if color_obj:
+    color_meshes = [color_obj] + [c for c in color_obj.children_recursive if c.type == 'MESH']
+    export_stl(
+        meshes         = color_meshes,
+        name           = "color_sensor",
+        center_mode    = "rotor_axis",
+        rotate_z_deg   = 0.0,
+        rotor_axis_obj = color_obj,
+        out_filename   = "color_sensor.stl",
+    )
+else:
+    print("  WARNING: 37308c01.dat (カラーセンサー) が見つかりません")
+
+# ── センサー body pos 計算 ────────────────────────────────
+
 if gear36_root:
-    print("\n  -- センサー site pos（radar_dome ローカル座標）--")
-    sonar_obj = bpy.data.objects.get("37316c01.dat")
-    color_obj = bpy.data.objects.get("37308c01.dat")
-
+    print("\n  -- センサー body pos（radar_dome ローカル座標）--")
     if sonar_obj:
-        # y_offset_m: 37316c01.dat オブジェクト原点からセンサー面（計測面）までのオフセット
-        # ビューアで確認: センサー面は原点から 2スタッド = 2 * STUD_PITCH = 0.016m 壁方向
-        sx, sy, sz = compute_local_site_pos(sonar_obj, gear36_root, 180.0, y_offset_m=2 * STUD_PITCH)
-        print(f'  <site name="sonar_site" pos="{sx:.4f} {sy:.4f} {sz:.4f}" size="0.01" rgba="1 0 0 1"/>')
-    else:
-        print("  WARNING: 37316c01.dat (距離センサー) が見つかりません")
-
+        spx, spy, spz = compute_local_body_pos(sonar_obj, gear36_root)
+        print(f'  sonar_sensor body pos="{spx:.4f} {spy:.4f} {spz:.4f}"')
     if color_obj:
-        # z_offset_m: 37308c01.dat オブジェクト原点からセンサー面（下面）までのオフセット
-        # ビューアで確認: センサー面は原点から 3プレート = -3 * PLATE_H = -0.0096m 下
-        cx_, cy_, cz_ = compute_local_site_pos(color_obj, gear36_root, 180.0, z_offset_m=-3 * PLATE_H)
-        print(f'  <site name="color_site" pos="{cx_:.4f} {cy_:.4f} {cz_:.4f}" size="0.01" rgba="1 1 0 1"/>')
-    else:
-        print("  WARNING: 37308c01.dat (カラーセンサー) が見つかりません")
+        cpx, cpy, cpz = compute_local_body_pos(color_obj, gear36_root)
+        print(f'  color_sensor body pos="{cpx:.4f} {cpy:.4f} {cpz:.4f}"')
 
 # ── obstacle_wall_a エクスポート ──────────────────────────
 
@@ -495,7 +524,7 @@ if all_base_meshes and gear36_root:
     print(f'<!-- モーター側 12T ギア -->')
     if gear12_root:
         print(f'<body name="motor_rotor" pos="{g12_mx:.4f} {g12_my:.4f} {g12_mz:.4f}" euler="0 0 0">')
-        print(f'  <joint name="motor_joint" type="hinge" axis="0 0 1" damping="0.85" armature="0.001"/>')
+        print(f'  <joint name="motor_joint" type="hinge" axis="0 0 -1" damping="0.85" armature="0.001"/>')
         print(f'  <geom name="bevel_gear_12_geom" type="mesh" mesh="bevel_gear_12_mesh"')
         print(f'        contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>')
         print(f'</body>')
@@ -506,13 +535,28 @@ if all_base_meshes and gear36_root:
     print(f'  <geom name="bevel_gear_36_geom" type="mesh" mesh="bevel_gear_36_mesh"')
     print(f'        contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>')
     print(f'  <!-- radar_dome は 36T ギア軸に固定された子body -->')
-    print(f'  <body name="radar_dome" pos="0 0 0" euler="0 0 180">')
+    print(f'  <body name="radar_dome" pos="0 0 0" euler="0 0 0">')
     print(f'    <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>')
     print(f'    <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"')
     print(f'          contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>')
-    print(f'    <!-- site pos は blender_export_log.txt の計算値をもとにビューアで微調整 -->')
-    print(f'    <site name="sonar_site" pos="0 0 0" size="0.01" rgba="1 0 0 1"/>')
-    print(f'    <site name="color_site" pos="0 0 0" size="0.01" rgba="1 1 0 1"/>')
+    if sonar_obj and gear36_root:
+        spx, spy, spz = compute_local_body_pos(sonar_obj, gear36_root)
+        print(f'    <!-- 超音波センサー: センサー原点を body 原点とする -->')
+        print(f'    <body name="sonar_sensor" pos="{spx:.4f} {spy:.4f} {spz:.4f}" euler="0 0 180">')
+        print(f'      <geom name="sonar_geom" type="mesh" mesh="sonar_sensor_mesh"')
+        print(f'            contype="0" conaffinity="0" rgba="0.3 0.3 0.8 1"/>')
+        print(f'      <!-- sonar_site: euler="0 0 180"のため+Y方向へ1.5スタッド = 0.012m -->')
+        print(f'      <site name="sonar_site" pos="0 0.012 0" size="0.01" rgba="1 0 0 1"/>')
+        print(f'    </body>')
+    if color_obj and gear36_root:
+        cpx, cpy, cpz = compute_local_body_pos(color_obj, gear36_root)
+        print(f'    <!-- カラーセンサー: センサー原点を body 原点とする -->')
+        print(f'    <body name="color_sensor" pos="{cpx:.4f} {cpy:.4f} {cpz:.4f}">')
+        print(f'      <geom name="color_geom" type="mesh" mesh="color_sensor_mesh"')
+        print(f'            contype="0" conaffinity="0" rgba="0.8 0.8 0.2 1"/>')
+        print(f'      <!-- color_site: センサー下面方向（-Z）へ3プレート = -0.0096m -->')
+        print(f'      <site name="color_site" pos="0 0 -0.0096" size="0.01" rgba="1 1 0 1"/>')
+        print(f'    </body>')
     print(f'  </body>')
     print(f'</body>')
 else:

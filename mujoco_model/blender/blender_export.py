@@ -1,22 +1,24 @@
 """
 Blender用スクリプト: STL形式で直接書き出し（numpy-stl使用）
 
-対応モデル: sonar_radar08.io
+対応モデル: sonar_radar09.io / sonar_radar09.blend
   Blenderシーン上のオブジェクト階層:
-    radar_base      … 台座グレーパーツ（地面プレート39369含む、マーカー/壁を含まない）
-    marker_red      … 赤マーカーブロック（39789系）
-    marker_blue     … 青マーカーブロック（39789系）
-    radar_dome      … ドーム（36Tギアを含まない）
+    radar_base      … 台座グレーパーツ（地面プレート含む、マーカー/壁を含まない）
+    marker_red      … 赤マーカーブロック
+    marker_blue     … 青マーカーブロック
+    radar_dome      … ドーム（36Tギアを含まない、センサーを含まない）
     bevel_gear_12   … モーター側12Tベベルギア（旋回軸=このEMPTY原点）
-    bevel_gear_36   … ドーム側36Tベベルギア一式（32498+6589+32073、旋回軸=このEMPTY原点）
-    obstacle_wall_a … 壁ブロックA（最上位オブジェクト）
-    obstacle_wall_b … 壁ブロックB（最上位オブジェクト）
+    bevel_gear_36   … ドーム側36Tベベルギア一式（旋回軸=このEMPTY原点）
+    obstacle_wall_a … 壁ブロックA
+    obstacle_wall_b … 壁ブロックB
+    starter         … スターターユニット（フォースセンサー+press_block）
+    37316c01.dat    … 距離センサー（ドーム内）
+    37308c01.dat    … カラーセンサー（ドーム内）
 
-変更点（sonar_radar07→08）:
-  - bevel_gear_36 を新規追加（旧版では32498.dat が radar_dome 内に埋め込まれていた）
-  - radar_dome のrotor_axis_obj を 32498.dat から bevel_gear_36 EMPTY に変更
-  - obstacle_wall_a / obstacle_wall_b を新規追加
-  - 地面プレート(39369)は radar_base の一部として自動的に含まれる
+変更点（sonar_radar08→09）:
+  - starter サブモデルを新規追加
+  - センサーSTL出力を廃止（libspikehat_sim コンポーネントを使用）
+  - センサーの <include> コンポーネント用マウント pos を出力
 
 アプローチ:
   - matrix_world で頂点をワールド座標に変換
@@ -26,20 +28,18 @@ Blender用スクリプト: STL形式で直接書き出し（numpy-stl使用）
       mj_x = -rx * SCALE
       mj_y = -ry * SCALE
       mj_z =  rz * SCALE
-  - quad は fan 三角形分割してSTLに書き出す
 
-出力:
-  radar_base_gray.stl   … 台座グレーパーツ（地面プレート含む）
-  radar_base_red.stl    … 赤マーカーブロック
-  radar_base_blue.stl   … 青マーカーブロック
-  bevel_gear_12.stl     … モーター側12Tベベルギア
-  bevel_gear_36.stl     … ドーム側36Tベベルギア一式
-  radar_dome.stl        … ドーム（36Tギアなし）
-  obstacle_wall_a.stl   … 壁ブロックA
-  obstacle_wall_b.stl   … 壁ブロックB
+出力 STL:
+  radar_base_gray.stl, radar_base_red.stl, radar_base_blue.stl
+  bevel_gear_12.stl, bevel_gear_36.stl
+  radar_dome.stl
+  obstacle_wall_a.stl, obstacle_wall_b.stl
+
+センサー/starterはSTLを出力しない（libspikehat_sim の meshes/ を使用）。
+コンポーネント用マウント pos のみをログに出力する。
 
 使い方:
-  Blenderのスクリプトエディタで開き「スクリプトを実行」
+  Blenderのスクリプトエディタで sonar_radar09.blend を開き「スクリプトを実行」
 """
 
 import bpy
@@ -222,6 +222,8 @@ gear12_root  = bpy.data.objects.get("bevel_gear_12")
 gear36_root  = bpy.data.objects.get("bevel_gear_36")
 wall_a_root  = bpy.data.objects.get("obstacle_wall_a")
 wall_b_root  = bpy.data.objects.get("obstacle_wall_b")
+starter_root    = bpy.data.objects.get("starter")
+press_block_obj = bpy.data.objects.get("press_block copy") or bpy.data.objects.get("press_block")
 
 base_meshes   = collect_mesh_descendants(base_root,   stop_at_empty=True) if base_root   else []
 panel_meshes  = collect_mesh_descendants(panel_root)  if panel_root  else []
@@ -419,54 +421,83 @@ dome_result = export_stl(
     out_filename   = "radar_dome.stl",
 )
 
-# ── sonar_sensor エクスポート ─────────────────────────────
+# ── starter 構造パーツ STL エクスポート ────────────────────────────────
+# press_block と force sensor 部品を除く LEGO 構造パーツのみを出力
 
 print("\n" + "=" * 60)
-print("sonar_sensor 処理")
+print("starter_base 処理（LEGO構造パーツ、sensor/press_blockを除く）")
 print("=" * 60)
 
-if sonar_obj:
-    sonar_meshes = [sonar_obj] + [c for c in sonar_obj.children_recursive if c.type == 'MESH']
-    export_stl(
-        meshes         = sonar_meshes,
-        name           = "sonar_sensor",
-        center_mode    = "rotor_axis",
-        rotate_z_deg   = 180.0,
-        rotor_axis_obj = sonar_obj,
-        out_filename   = "sonar_sensor.stl",
-    )
-else:
-    print("  WARNING: 37316c01.dat (距離センサー) が見つかりません")
+if starter_root:
+    # press_block 配下は除外する
+    press_block_names = set()
+    if press_block_obj:
+        press_block_names.add(press_block_obj.name)
+        press_block_names.update(c.name for c in press_block_obj.children_recursive)
 
-# ── color_sensor エクスポート ─────────────────────────────
+    starter_structure = []
+    for child in starter_root.children_recursive:
+        if child.type == 'MESH' and child.name not in press_block_names:
+            starter_structure.append(child)
+
+    if starter_structure:
+        export_stl(
+            meshes       = starter_structure,
+            name         = "starter_base",
+            center_mode  = "bottom_z",
+            out_filename = "starter_base.stl",
+        )
+    else:
+        print("  WARNING: starter 構造パーツが見つかりません")
+else:
+    print("  WARNING: starter オブジェクトが見つかりません")
+
+# ── センサー: STL出力なし、コンポーネント用マウント pos のみ計算 ──────
 
 print("\n" + "=" * 60)
-print("color_sensor 処理")
+print("センサーコンポーネント用マウント pos 計算")
+print("  (STLは libspikehat_sim/examples/meshes/ のものを使用)")
 print("=" * 60)
 
-if color_obj:
-    color_meshes = [color_obj] + [c for c in color_obj.children_recursive if c.type == 'MESH']
-    export_stl(
-        meshes         = color_meshes,
-        name           = "color_sensor",
-        center_mode    = "rotor_axis",
-        rotate_z_deg   = 0.0,
-        rotor_axis_obj = color_obj,
-        out_filename   = "color_sensor.stl",
-    )
-else:
-    print("  WARNING: 37308c01.dat (カラーセンサー) が見つかりません")
+def compute_component_mount_pos(sensor_meshes, sensor_obj, gear36_root, stl_sensor_local_ldu):
+    """
+    libspikehat_sim STL の local(0,0,0) が対応する dome-local MuJoCo 座標を計算する。
 
-# ── センサー body pos 計算 ────────────────────────────────
+    stl_sensor_local_ldu: スタンドアロンモデルで求めた STL(0,0,0) のセンサー Blender ローカル座標 (LDU)
+      = standalone bbox の (cx, cy, z0) - センサーオブジェクトのスタンドアロン Blender world 位置
+    """
+    stl_local = mathutils.Vector(stl_sensor_local_ldu)
+    stl_world = sensor_obj.matrix_world @ stl_local
+    ax = gear36_root.matrix_world.translation
+    dx, dy, dz = stl_world.x - ax.x, stl_world.y - ax.y, stl_world.z - ax.z
+    return -dx * SCALE, -dy * SCALE, dz * SCALE
 
 if gear36_root:
-    print("\n  -- センサー body pos（radar_dome ローカル座標）--")
     if sonar_obj:
         spx, spy, spz = compute_local_body_pos(sonar_obj, gear36_root)
-        print(f'  sonar_sensor body pos="{spx:.4f} {spy:.4f} {spz:.4f}"')
+        print(f'  [参考] 距離センサー LDraw原点 dome-local: pos="{spx:.4f} {spy:.4f} {spz:.4f}"')
+        # STL(0,0,0) はスタンドアロン Z_min に対応 (sensor local offset: (0,-29.4,-28.9) LDU)
+        # スタンドアロン: 37316c01.dat at LDR(-39,-29,28) → Blender(-39,28,29)
+        # standalone bbox: cx=-39, cy=-1.4, z0=0.1 → STL_local = (0,-29.4,-28.9)
+        smx, smy, smz = compute_component_mount_pos(
+            [sonar_obj], sonar_obj, gear36_root, (0, -29.4, -28.9))
+        print(f'  距離センサー STL(0,0,0) dome-local mount pos="{smx:.4f} {smy:.4f} {smz:.4f}"')
+        print(f'    → <body name="sonar_sensor" pos="{smx:.4f} {smy:.4f} {smz:.4f}" euler="180 0 0">')
+    else:
+        print("  WARNING: 37316c01.dat (距離センサー) が見つかりません")
+
     if color_obj:
         cpx, cpy, cpz = compute_local_body_pos(color_obj, gear36_root)
-        print(f'  color_sensor body pos="{cpx:.4f} {cpy:.4f} {cpz:.4f}"')
+        print(f'  [参考] カラーセンサー LDraw原点 dome-local: pos="{cpx:.4f} {cpy:.4f} {cpz:.4f}"')
+        # STL(0,0,0) はスタンドアロン Z_min に対応 (sensor local offset: (0,-19.4,-28.9) LDU)
+        # スタンドアロン: 37308.dat at LDR(-25,-29,-32) → Blender(-25,-32,29)
+        # standalone bbox: cx=-25, cy=-51.4, z0=0.1 → STL_local = (0,-19.4,-28.9)
+        cmx, cmy, cmz = compute_component_mount_pos(
+            [color_obj], color_obj, gear36_root, (0, -19.4, -28.9))
+        print(f'  カラーセンサー STL(0,0,0) dome-local mount pos="{cmx:.4f} {cmy:.4f} {cmz:.4f}"')
+        print(f'    → <body name="color_sensor" pos="{cmx:.4f} {cmy:.4f} {cmz:.4f}" euler="-90 180 0">')
+else:
+    print("  WARNING: bevel_gear_36 が見つかりません")
 
 # ── obstacle_wall_a エクスポート ──────────────────────────
 
@@ -540,25 +571,46 @@ if all_base_meshes and gear36_root:
     print(f'    <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"')
     print(f'          contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>')
     if sonar_obj and gear36_root:
-        spx, spy, spz = compute_local_body_pos(sonar_obj, gear36_root)
-        print(f'    <!-- 超音波センサー: センサー原点を body 原点とする -->')
-        print(f'    <body name="sonar_sensor" pos="{spx:.4f} {spy:.4f} {spz:.4f}" euler="0 0 180">')
-        print(f'      <geom name="sonar_geom" type="mesh" mesh="sonar_sensor_mesh"')
-        print(f'            contype="0" conaffinity="0" rgba="0.3 0.3 0.8 1"/>')
-        print(f'      <!-- sonar_site: euler="0 0 180"のため+Y方向へ1.5スタッド = 0.012m -->')
-        print(f'      <site name="sonar_site" pos="0 0.012 0" size="0.01" rgba="1 0 0 1"/>')
+        smx, smy, smz = compute_component_mount_pos(
+            [sonar_obj], sonar_obj, gear36_root, (0, -29.4, -28.9))
+        print(f'    <!-- 距離センサー: libspikehat_sim distance_sensor_body コンポーネント')
+        print(f'         euler="180 0 0": 検出面(+Y)→dome -Y(外向き), 高さ(+Z)→dome -Z -->')
+        print(f'    <body name="sonar_sensor" pos="{smx:.4f} {smy:.4f} {smz:.4f}" euler="180 0 0">')
+        print(f'      <include file="../sim/libspikehat_sim/examples/components/distance_sensor_body.xml"/>')
         print(f'    </body>')
     if color_obj and gear36_root:
-        cpx, cpy, cpz = compute_local_body_pos(color_obj, gear36_root)
-        print(f'    <!-- カラーセンサー: センサー原点を body 原点とする -->')
-        print(f'    <body name="color_sensor" pos="{cpx:.4f} {cpy:.4f} {cpz:.4f}">')
-        print(f'      <geom name="color_geom" type="mesh" mesh="color_sensor_mesh"')
-        print(f'            contype="0" conaffinity="0" rgba="0.8 0.8 0.2 1"/>')
-        print(f'      <!-- color_site: センサー下面方向（-Z）へ3プレート = -0.0096m -->')
-        print(f'      <site name="color_site" pos="0 0 -0.0096" size="0.01" rgba="1 1 0 1"/>')
+        cmx, cmy, cmz = compute_component_mount_pos(
+            [color_obj], color_obj, gear36_root, (0, -19.4, -28.9))
+        print(f'    <!-- カラーセンサー: libspikehat_sim color_sensor_body コンポーネント')
+        print(f'         euler="-90 180 0": 検出面(+Y)→dome -Z(下向き), 高さ(+Z)→dome -Y -->')
+        print(f'    <body name="color_sensor" pos="{cmx:.4f} {cmy:.4f} {cmz:.4f}" euler="-90 180 0">')
+        print(f'      <include file="../sim/libspikehat_sim/examples/components/color_sensor_body.xml"/>')
         print(f'    </body>')
     print(f'  </body>')
     print(f'</body>')
+
+    # ── starter (sensor_mount / press_block) 世界座標 ────────────────────
+    print(f'\n<!-- starter（フォースセンサーユニット）世界 MuJoCo 座標 -->')
+    if starter_root:
+        stx = -(starter_root.matrix_world.translation.x + bdx) * SCALE
+        sty = -(starter_root.matrix_world.translation.y + bdy) * SCALE
+        stz =  (starter_root.matrix_world.translation.z + bdz) * SCALE
+        print(f'<!-- sensor_mount  pos="{stx:.4f} {sty:.4f} {stz:.4f}" -->')
+        print(f'<body name="sensor_mount" pos="{stx:.4f} {sty:.4f} {stz:.4f}">')
+        print(f'  <include file="../sim/libspikehat_sim/examples/components/force_sensor_body.xml"/>')
+        print(f'</body>')
+        if press_block_obj:
+            pbx = -(press_block_obj.matrix_world.translation.x + bdx) * SCALE
+            pby = -(press_block_obj.matrix_world.translation.y + bdy) * SCALE
+            pbz =  (press_block_obj.matrix_world.translation.z + bdz) * SCALE
+            print(f'<!-- press_block  pos="{pbx:.4f} {pby:.4f} {pbz:.4f}" -->')
+            print(f'<body name="press_block" pos="{pbx:.4f} {pby:.4f} {pbz:.4f}">')
+            print(f'  <!-- press_slide joint をここに記述 -->')
+            print(f'</body>')
+        else:
+            print(f'  <!-- press_block: "press_block copy" オブジェクトが見つかりません -->')
+    else:
+        print(f'  <!-- starter オブジェクトが見つかりません -->')
 else:
     print("  pos計算スキップ（必要なオブジェクトが見つからなかった）")
 

@@ -11,15 +11,18 @@
   <asset>
     <mesh name="radar_base_panel_mesh" file="radar_base_panel.stl" scale="1 1 1"/>
     <mesh name="radar_base_gray_mesh"  file="radar_base_gray.stl"  scale="1 1 1"/>
-    <mesh name="radar_base_red_mesh"  file="radar_base_red.stl"  scale="1 1 1"/>
-    <mesh name="radar_base_blue_mesh" file="radar_base_blue.stl" scale="1 1 1"/>
-    <mesh name="radar_dome_mesh"      file="radar_dome.stl"      scale="1 1 1"/>
-    <mesh name="sonar_sensor_mesh"    file="sonar_sensor.stl"    scale="1 1 1"/>
-    <mesh name="color_sensor_mesh"    file="color_sensor.stl"    scale="1 1 1"/>
-    <mesh name="bevel_gear_12_mesh"   file="bevel_gear_12.stl"   scale="1 1 1"/>
-    <mesh name="bevel_gear_36_mesh"   file="bevel_gear_36.stl"   scale="1 1 1"/>
-    <mesh name="obstacle_wall_a_mesh" file="obstacle_wall_a.stl" scale="1 1 1"/>
-    <mesh name="obstacle_wall_b_mesh" file="obstacle_wall_b.stl" scale="1 1 1"/>
+    <mesh name="radar_base_red_mesh"   file="radar_base_red.stl"   scale="1 1 1"/>
+    <mesh name="radar_base_blue_mesh"  file="radar_base_blue.stl"  scale="1 1 1"/>
+    <mesh name="radar_dome_mesh"       file="radar_dome.stl"       scale="1 1 1"/>
+    <mesh name="distance_sensor_mesh"  file="distance_sensor.stl"  scale="1 1 1"/>
+    <mesh name="color_sensor_mesh"     file="color_sensor.stl"     scale="1 1 1"/>
+    <mesh name="force_sensor_body_mesh" file="force_sensor_body.stl" scale="1 1 1"/>
+    <mesh name="button_mesh"           file="button.stl"           scale="1 1 1"/>
+    <mesh name="press_block_mesh"      file="press_block.stl"      scale="1 1 1"/>
+    <mesh name="bevel_gear_12_mesh"    file="bevel_gear_12.stl"    scale="1 1 1"/>
+    <mesh name="bevel_gear_36_mesh"    file="bevel_gear_36.stl"    scale="1 1 1"/>
+    <mesh name="obstacle_wall_a_mesh"  file="obstacle_wall_a.stl"  scale="1 1 1"/>
+    <mesh name="obstacle_wall_b_mesh"  file="obstacle_wall_b.stl"  scale="1 1 1"/>
   </asset>
 
   <worldbody>
@@ -32,9 +35,7 @@
     <geom name="floor" type="plane" size="1 1 0.01"
           rgba="0.6 0.6 0.6 1" contype="1" conaffinity="1"/>
 
-    <!-- 壁A: 地面ブロックの穴(8mmピッチ)に合わせた初期配置。
-         wall_a_x/wall_a_y で水平面内を移動、観測域外(y方向後方)への退避可能。
-         sonar_radar08.io の obstacle_wall_a サブモデルに対応。 -->
+    <!-- 壁A: 地面ブロックの穴(8mmピッチ)に合わせた初期配置。 -->
     <body name="wall_body_a" pos="0.0080 -0.0380 0.0000">
       <joint name="wall_a_x" type="slide" axis="1 0 0" range="-0.08 0.08" damping="5.0"/>
       <joint name="wall_a_y" type="slide" axis="0 1 0" range="-0.080 0.20" damping="5.0"/>
@@ -43,8 +44,7 @@
             contype="1" conaffinity="1" rgba="0.8 0.8 0.2 0.4"/>
     </body>
 
-    <!-- 壁B: 初期は壁Aの隣。観測域外(y方向後方)へ退避可能。
-         sonar_radar08.io の obstacle_wall_b サブモデルに対応。 -->
+    <!-- 壁B: 初期は壁Aの隣。 -->
     <body name="wall_body_b" pos="-0.0480 -0.0796 0.0000">
       <joint name="wall_b_x" type="slide" axis="1 0 0" range="-0.08 0.136" damping="5.0"/>
       <joint name="wall_b_y" type="slide" axis="0 1 0" range="-0.040 0.25" damping="5.0"/>
@@ -60,28 +60,19 @@
             contype="0" conaffinity="0" rgba="0.366 0.361 0.371 1"/>
       <geom name="base_gray_geom"  type="mesh" mesh="radar_base_gray_mesh"
             contype="0" conaffinity="0" rgba="0.366 0.361 0.371 1"/>
-      <geom name="base_red_geom"  type="mesh" mesh="radar_base_red_mesh"
+      <geom name="base_red_geom"   type="mesh" mesh="radar_base_red_mesh"
             contype="0" conaffinity="0" rgba="0.578 0.010 0.002 1"/>
-      <geom name="base_blue_geom" type="mesh" mesh="radar_base_blue_mesh"
+      <geom name="base_blue_geom"  type="mesh" mesh="radar_base_blue_mesh"
             contype="0" conaffinity="0" rgba="0.000 0.089 0.515 1"/>
 
-      <!-- モーター・ドーム柱まわりの衝突ガード（壁が侵入しないようにする）。
-           位置・サイズはビューアで確認して調整すること。
-           確認後は rgba の alpha を 0 にして不可視化する。 -->
-      <!-- モーター柱（motor_rotor 周辺）のガード -->
-      <!-- ガードジオムは薄いスラブ（高さ4mm）にして、センサーのレイキャストが
-           通過する高さ（30mm以上）に干渉しないようにする -->
-      <!-- モーター柱（motor_rotor 周辺）のガード -->
       <geom name="radar_column_guard" type="box"
             pos="0.008 0.060 0.002" size="0.030 0.030 0.002"
             contype="1" conaffinity="1" rgba="0.9 0.5 0.1 0.3"/>
-      <!-- ドーム旋回範囲ガード: bevel_gear_36 軸中心の円柱 -->
       <geom name="dome_sweep_guard" type="cylinder"
             pos="0.0076 0.0728 0.002" size="0.040 0.002"
             contype="1" conaffinity="1" rgba="0.5 0.8 0.9 0.3"/>
 
-      <!-- モーターローター（12Tベベルギアを保持）。
-           pos はblender_export_log.txtの motor_rotor 値を使用。 -->
+      <!-- モーターローター（12Tベベルギアを保持） -->
       <body name="motor_rotor" pos="0.0078 0.0482 0.0237" euler="0 0 0">
         <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
         <joint name="motor_joint" type="hinge" axis="0 0 -1"
@@ -90,8 +81,7 @@
               contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>
       </body>
 
-      <!-- 36Tベベルギア（ドーム旋回軸）。motor_rotorとギア比1:3・逆回転で連動。
-           pos は blender_export_log.txt の bevel_gear_36 値を使用。 -->
+      <!-- 36Tベベルギア（ドーム旋回軸）。motor_rotorとギア比1:3・逆回転で連動。 -->
       <body name="bevel_gear_36" pos="0.0076 0.0728 0.0300" euler="0 0 0">
         <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
         <joint name="dome_joint" type="hinge" axis="0 0 1"
@@ -99,59 +89,71 @@
         <geom name="bevel_gear_36_geom" type="mesh" mesh="bevel_gear_36_mesh"
               contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>
 
-        <!-- ドーム（bevel_gear_36と同軸で固定、ジョイントなし）。
-             euler="0 0 180" は blender_export_log.txt の Z軸回転180°に対応。
-             site pos は blender_export_log.txt のローカル座標値。 -->
+        <!-- ドーム（bevel_gear_36と同軸で固定） -->
         <body name="radar_dome" pos="0 0 0" euler="0 0 0">
           <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
           <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
                 contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>
-          <body name="sonar_sensor" pos="0.0010 -0.0093 0.0227" euler="0 0 180">
-            <geom name="sonar_geom" type="mesh" mesh="sonar_sensor_mesh"
-                  contype="0" conaffinity="0" rgba="0.3 0.3 0.8 1"/>
-            <site name="sonar_site" pos="0 0.012 0" size="0.01" rgba="1 0 0 1"/>
+
+          <!-- 距離センサー（libspikehat_sim distance_sensor_body コンポーネント）
+               pos: STL(0,0,0) = スタンドアロン Z_min → ドーム bbox Z_max に対応
+                    センサーローカル offset (0,-29.4,-28.9) LDU を dome 回転で変換して算出
+               euler="180 0 0": 検出面(+Y)→dome -Y(外向き), 高さ(+Z)→dome -Z(下方向) -->
+          <body name="sonar_sensor" pos="0.0021 -0.0210 0.0342" euler="180 0 0">
+            <include file="../sim/libspikehat_sim/examples/components/distance_sensor_body.xml"/>
           </body>
-          <body name="color_sensor" pos="-0.0032 0.0393 0.0387">
-            <geom name="color_geom" type="mesh" mesh="color_sensor_mesh"
-                  contype="0" conaffinity="0" rgba="0.8 0.8 0.2 1"/>
-            <site name="color_site" pos="0 0 -0.0096" size="0.01" rgba="1 1 0 1"/>
+
+          <!-- カラーセンサー（libspikehat_sim color_sensor_body コンポーネント）
+               pos: STL(0,0,0) = スタンドアロン Z_min → ドーム bbox Z_center に対応
+                    センサーローカル offset (0,-19.4,-28.9) LDU を dome 回転で変換して算出
+               euler="-90 180 0": 検出面(+Y)→dome -Z(下向き), 高さ(+Z)→dome -Y(内向き) -->
+          <body name="color_sensor" pos="-0.0042 0.0509 0.0309" euler="-90 180 0">
+            <include file="../sim/libspikehat_sim/examples/components/color_sensor_body.xml"/>
           </body>
+
         </body>
 
       </body>
 
     </body>
 
-    <!-- フォースセンサー（スタート/ストップトリガー）。
-         press_ctrl でpress_bodyを押し下げ、離すとスキャン開始または停止。 -->
-    <body name="force_sensor_body" pos="0.10 0 0.010">
-      <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
-      <geom name="force_sensor_geom" type="box" pos="0 0 0" size="0.015 0.015 0.005"
-            rgba="0.3 0.3 0.8 1" contype="1" conaffinity="1"/>
-      <site name="force_site" pos="0 0 0.005" size="0.013 0.013 0.001" type="box" rgba="1 0.5 0 0.5"/>
+    <!-- starter（フォースセンサーユニット）: sonar_radar09.ldrから算出した位置。
+         sensor_mount: starter サブモデル原点 (LDR→MuJoCo)
+         press_block:  press_block submodel 原点 (同) -->
+    <!-- starter LDR回転 [0,0,-1;0,1,0;1,0,0] × part回転 → sensor euler="0 0 180"
+         press_block: starter LDR回転のみ → euler="0 0 90" -->
+    <body name="sensor_mount" pos="0.072 0.104 0.016" euler="0 0 90">
+      <include file="../sim/libspikehat_sim/examples/components/force_sensor_body.xml"/>
     </body>
 
-    <body name="press_body" pos="0.10 0 0.040">
-      <joint name="press_slide" type="slide" axis="0 0 -1" range="0.0 0.030" damping="5.0"/>
-      <inertial pos="0 0 0" mass="0.02" diaginertia="0.0001 0.0001 0.0001"/>
-      <geom name="press_geom" type="box" pos="0 0 0" size="0.012 0.012 0.005"
-            rgba="0.8 0.3 0.3 1" contype="1" conaffinity="1"/>
+    <body name="press_block" pos="0.072 0.104 0.057" euler="0 0 0">
+      <joint name="press_slide" type="slide" axis="0 0 -1"
+             range="0 0.0095" damping="5"/>
+      <inertial pos="0 0 0.014" mass="0.020" diaginertia="0.0001 0.0001 0.0001"/>
+      <geom name="press_geom" type="mesh" mesh="press_block_mesh"
+            contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1"/>
     </body>
 
   </worldbody>
 
   <equality>
-    <!-- ベベルギア(12T-36T)噛み合い: dome_joint = +motor_joint / 3
-         motor_joint axis="0 0 -1"(正=CW), dome_joint axis="0 0 1"(正=CCW)
-         CWモーターに対してCCWドーム → polycoef正 -->
+    <!-- ベベルギア(12T-36T)噛み合い: dome_joint = +motor_joint / 3 -->
     <joint joint1="dome_joint" joint2="motor_joint" polycoef="0 0.33333333 0 0 0"/>
+    <!-- シャフト接合: press_slide = button_slide（button_slideがprimary）
+         motor が button_slide を直接駆動 → press_slide が受動的に追従
+         button の内蔵スプリングが press_block の復元力も担う -->
+    <joint joint1="press_slide" joint2="button_slide" polycoef="0 1 0 0 0"/>
   </equality>
 
   <actuator>
     <motor name="turret_motor" joint="motor_joint"
            gear="10" ctrllimited="true" ctrlrange="-1 1"/>
-    <position name="press_ctrl"   joint="press_slide"
-              kp="50" ctrllimited="true" ctrlrange="0.0 0.030"/>
+    <!-- press_ctrl: button_slide を直接駆動（test_force_sensor.xmlと同じ設計）
+         ctrl=0  → 力ゼロ → スプリングが button と press_block を復元
+         ctrl>0  → button と press_block が一緒に下降
+         ctrl=10N → 最大（実機確認値） -->
+    <motor name="press_ctrl" joint="button_slide"
+           gear="1" ctrllimited="true" ctrlrange="0 10"/>
     <position name="wall_a_x_ctrl" joint="wall_a_x"
               kp="50" ctrllimited="true" ctrlrange="-0.08 0.08"/>
     <position name="wall_a_y_ctrl" joint="wall_a_y"
@@ -169,8 +171,8 @@
     <jointpos  name="dome_angle"   joint="dome_joint"/>
     <jointvel  name="dome_vel"     joint="dome_joint"/>
     <!-- センサー位置・姿勢 -->
-    <framepos  name="sonar_pos"  objtype="site" objname="sonar_site"/>
-    <framequat name="sonar_quat" objtype="site" objname="sonar_site"/>
+    <framepos  name="distance_pos"  objtype="site" objname="distance_site"/>
+    <framequat name="distance_quat" objtype="site" objname="distance_site"/>
     <framepos  name="color_pos"  objtype="site" objname="color_site"/>
     <framequat name="color_quat" objtype="site" objname="color_site"/>
     <!-- スタート/ストップトリガー -->

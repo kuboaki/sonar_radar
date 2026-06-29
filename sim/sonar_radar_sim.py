@@ -145,10 +145,11 @@ else:
     _mdl = mujoco.MjModel.from_xml_path(_xml_path)
     _dat = mujoco.MjData(_mdl)
 
-    # 初期カメラ表示範囲: floor(2m四方)を含む全体の寸法ではなく、
-    # レーダー本体(数cm)を基準にして拡大表示する
-    _mdl.stat.center[:] = [0.0, -0.02, 0.03]
-    _mdl.stat.extent = 0.12
+    # 初期カメラ表示範囲: システム全体（台座・ドーム・スターター・壁）が収まるよう設定
+    # X: -0.10〜0.12, Y: -0.09(壁前方)〜+0.12(starter後方), Z: 0〜0.08
+    # 中心を Y=0.02（スターターと壁の中間付近）、Z=0.04（高さ中心）に設定
+    _mdl.stat.center[:] = [0.0, 0.02, 0.04]
+    _mdl.stat.extent = 0.22
 
     # mjpython かどうか判定
     _IS_MJPYTHON = getattr(mujoco.viewer, '_MJPYTHON', None) is not None
@@ -180,6 +181,8 @@ else:
             _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "press_ctrl")
         _press_qadr = _mdl.jnt_qposadr[
             mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "press_slide")]
+        _button_qadr = _mdl.jnt_qposadr[
+            mujoco.mj_name2id(_mdl, mujoco.mjtObj.mjOBJ_JOINT, "button_slide")]
         _wall_a_x_aid = mujoco.mj_name2id(
             _mdl, mujoco.mjtObj.mjOBJ_ACTUATOR, "wall_a_x_ctrl")
         _wall_a_y_aid = mujoco.mj_name2id(
@@ -210,14 +213,26 @@ else:
         # 操作対象の壁: 0=黄色(wall_a), 1=黒(wall_b)
         _selected_wall = [0]
 
+        # スペースキーによる starter パルス制御
+        # 残りフレーム数 > 0 の間は press_ctrl を PRESS_FORCE に保持し、
+        # 0 になったら自動的に 0 に戻す（押して離すを自動再現）
+        _PRESS_FORCE  = 3.0   # 押下時の力 [N]（閾値 0.5N を超えれば十分）
+        _PRESS_FRAMES = 30    # 押下を維持するフレーム数（≈ 30ms 程度）
+        _press_pulse  = [0]   # 残りフレーム数
+
         def _key_callback(keycode):
             """
-            キーボードで壁を1スタッド単位移動する。
+            キーボード操作:
+              Space     : starter を「押して離す」（スキャン開始/終了トリガー）
               1         : 黄色壁(wall_a)を選択
               2         : 黒壁(wall_b)を選択
               矢印キー ← → : 選択中の壁 X方向
               矢印キー ↑ ↓ : 選択中の壁 Y方向（↑=壁方向、↓=退避方向）
             """
+            if keycode == ord(' '):
+                _press_pulse[0] = _PRESS_FRAMES
+                print("[sim] starter: 押下パルス送信", file=sys.stderr)
+                return
             s = _WALL_STUD
             if keycode == ord('1'):
                 _selected_wall[0] = 0
@@ -243,25 +258,35 @@ else:
             状態を取得し、表示用の _mdl/_dat に反映して sync() するだけ。
             物理計算（mj_step）は行わない。
             """
-            with mujoco.viewer.launch_passive(_mdl, _dat, key_callback=_key_callback) as viewer:
-                # floor(2m四方)込みの自動フィットだと小さく表示されるため、
-                # レーダー本体(数cm)を基準にカメラを寄せる
+            with mujoco.viewer.launch_passive(
+                    _mdl, _dat,
+                    key_callback=_key_callback,
+                    show_left_ui=False) as viewer:
+                # システム全体が見えるカメラ設定
                 viewer.cam.lookat[:] = _mdl.stat.center
-                viewer.cam.distance  = _mdl.stat.extent * 2.5
-                viewer.cam.azimuth   = 180.0
-                viewer.cam.elevation = -30.0
+                viewer.cam.distance  = _mdl.stat.extent * 1.8
+                viewer.cam.azimuth   = 155.0   # 左前方から: 壁(左)・ドーム(中央奥)・starter(右)
+                viewer.cam.elevation = -28.0   # やや急な俯瞰
 
                 while viewer.is_running():
                     if _hat_holder:
                         _hat = _hat_holder[0]
 
+                        # starter パルス処理（Space キー）
+                        # パルス中は PRESS_FORCE を維持、終了後に 0 に戻す
+                        if _press_pulse[0] > 0:
+                            _press_pulse[0] -= 1
+                            _dat.ctrl[_press_aid] = _PRESS_FORCE
+                        else:
+                            _dat.ctrl[_press_aid] = 0.0
+
                         # Controlタブの各ctrlを実シミュレーションへ転送
-                        # 壁はスタッドピッチ単位にスナップして転送
-                        _hat.sim_set_ctrl(_press_aid,    float(_dat.ctrl[_press_aid]))
-                        _hat.sim_set_ctrl(_wall_a_x_aid, _snap_stud(_dat.ctrl[_wall_a_x_aid]))
-                        _hat.sim_set_ctrl(_wall_a_y_aid, _snap_stud(_dat.ctrl[_wall_a_y_aid]))
-                        _hat.sim_set_ctrl(_wall_b_x_aid, _snap_stud(_dat.ctrl[_wall_b_x_aid]))
-                        _hat.sim_set_ctrl(_wall_b_y_aid, _snap_stud(_dat.ctrl[_wall_b_y_aid]))
+                        # 壁はスタッドピッチ単位にスナップしてからControlタブとシムの両方に反映
+                        _hat.sim_set_ctrl(_press_aid, float(_dat.ctrl[_press_aid]))
+                        for _aid in (_wall_a_x_aid, _wall_a_y_aid, _wall_b_x_aid, _wall_b_y_aid):
+                            _sv = _snap_stud(_dat.ctrl[_aid])
+                            _dat.ctrl[_aid] = _sv
+                            _hat.sim_set_ctrl(_aid, _sv)
 
                         # 実シミュレーションのモーター角度を表示用に反映
                         try:
@@ -273,10 +298,12 @@ else:
                         except RuntimeError:
                             pass
 
-                        # 終了スイッチ(press_body)の位置を表示用に反映
+                        # starter の press_block と button 位置を表示用に反映
                         try:
-                            _dat.qpos[_press_qadr] = _hat.sim_get_qpos(_press_qadr)
-                            _dat.qvel[_press_qadr] = 0.0
+                            _dat.qpos[_press_qadr]   = _hat.sim_get_qpos(_press_qadr)
+                            _dat.qvel[_press_qadr]   = 0.0
+                            _dat.qpos[_button_qadr]  = _hat.sim_get_qpos(_button_qadr)
+                            _dat.qvel[_button_qadr]  = 0.0
                         except RuntimeError:
                             pass
 
@@ -303,7 +330,7 @@ else:
         _viewer_thread = threading.Thread(target=_viewer_loop, daemon=True)
         _viewer_thread.start()
 
-        print("[sim] Controlタブの press_ctrl を 0→0.030→0 と動かして開始トリガーを入力してください。",
+        print("[sim] Controlタブの press_ctrl を 0→10→0 と動かして開始トリガーを入力してください。",
               file=sys.stderr)
         print("[sim] 壁の移動: 1=黄色壁選択 / 2=黒壁選択  矢印キー(←→X / ↑↓Y)で移動",
               file=sys.stderr)

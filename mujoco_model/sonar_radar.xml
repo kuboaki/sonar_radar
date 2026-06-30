@@ -14,8 +14,11 @@
     <mesh name="radar_base_red_mesh"  file="radar_base_red.stl"  scale="1 1 1"/>
     <mesh name="radar_base_blue_mesh" file="radar_base_blue.stl" scale="1 1 1"/>
     <mesh name="radar_dome_mesh"      file="radar_dome.stl"      scale="1 1 1"/>
-    <mesh name="sonar_sensor_mesh"    file="sonar_sensor.stl"    scale="1 1 1"/>
+    <mesh name="distance_sensor_mesh" file="distance_sensor.stl" scale="1 1 1"/>
     <mesh name="color_sensor_mesh"    file="color_sensor.stl"    scale="1 1 1"/>
+    <mesh name="force_sensor_body_mesh" file="force_sensor_body.stl" scale="1 1 1"/>
+    <mesh name="button_mesh"           file="button.stl"           scale="1 1 1"/>
+    <mesh name="press_block_mesh"      file="press_block.stl"      scale="1 1 1"/>
     <mesh name="bevel_gear_12_mesh"   file="bevel_gear_12.stl"   scale="1 1 1"/>
     <mesh name="bevel_gear_36_mesh"   file="bevel_gear_36.stl"   scale="1 1 1"/>
     <mesh name="obstacle_wall_a_mesh" file="obstacle_wall_a.stl" scale="1 1 1"/>
@@ -106,10 +109,17 @@
           <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
           <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
                 contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>
-          <body name="sonar_sensor" pos="0.0010 -0.0093 0.0227" euler="0 0 180">
-            <geom name="sonar_geom" type="mesh" mesh="sonar_sensor_mesh"
-                  contype="0" conaffinity="0" rgba="0.3 0.3 0.8 1"/>
-            <site name="sonar_site" pos="0 0.012 0" size="0.01" rgba="1 0 0 1"/>
+          <!-- 距離センサー（libspikehat_sim distance_sensor_body コンポーネント）
+               distance_sensor.io/.ldr を Studio標準姿勢(identity回転)に作り直し、
+               center_mode="pivot_origin" でSTL原点=パーツ自身のピボットとした。
+               pos: T_sensor - T_gear36（Blender world座標の単純差分。
+                    インライン版で実績のある compute_local_body_pos と同じ値。
+                    位置はSTLの内部規約に依存しない物理的な事実のため共通）
+               euler="0 0 -175": ドーム自体の5°傾きがジオメトリに焼き込まれているため、
+                    センサーのbody回転も gear36相対でキャンセルせず、ワールド回転
+                    R_sensor_world をそのまま使い5°を保持して計算（180°-5°=175°）。 -->
+          <body name="sonar_sensor" pos="0.0010 -0.0093 0.0227" euler="0 0 -175">
+            <include file="../sim/libspikehat_sim/examples/components/distance_sensor_body.xml"/>
           </body>
           <body name="color_sensor" pos="-0.0032 0.0393 0.0387">
             <geom name="color_geom" type="mesh" mesh="color_sensor_mesh"
@@ -122,20 +132,21 @@
 
     </body>
 
-    <!-- フォースセンサー（スタート/ストップトリガー）。
-         press_ctrl でpress_bodyを押し下げ、離すとスキャン開始または停止。 -->
-    <body name="force_sensor_body" pos="0.10 0 0.010">
-      <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
-      <geom name="force_sensor_geom" type="box" pos="0 0 0" size="0.015 0.015 0.005"
-            rgba="0.3 0.3 0.8 1" contype="1" conaffinity="1"/>
-      <site name="force_site" pos="0 0 0.005" size="0.013 0.013 0.001" type="box" rgba="1 0.5 0 0.5"/>
+    <!-- starter（フォースセンサーユニット）: sonar_radar09.ldrから算出した位置。
+         sensor_mount: starter サブモデル原点 (LDR→MuJoCo)
+         press_block:  press_block submodel 原点 (同) -->
+    <!-- starter LDR回転 [0,0,-1;0,1,0;1,0,0] × part回転 → sensor euler="0 0 180"
+         press_block: starter LDR回転のみ → euler="0 0 90" -->
+    <body name="sensor_mount" pos="0.072 0.104 0.016" euler="0 0 90">
+      <include file="../sim/libspikehat_sim/examples/components/force_sensor_body.xml"/>
     </body>
 
-    <body name="press_body" pos="0.10 0 0.040">
-      <joint name="press_slide" type="slide" axis="0 0 -1" range="0.0 0.030" damping="5.0"/>
-      <inertial pos="0 0 0" mass="0.02" diaginertia="0.0001 0.0001 0.0001"/>
-      <geom name="press_geom" type="box" pos="0 0 0" size="0.012 0.012 0.005"
-            rgba="0.8 0.3 0.3 1" contype="1" conaffinity="1"/>
+    <body name="press_block" pos="0.072 0.104 0.057" euler="0 0 0">
+      <joint name="press_slide" type="slide" axis="0 0 -1"
+             range="0 0.0095" damping="5"/>
+      <inertial pos="0 0 0.014" mass="0.020" diaginertia="0.0001 0.0001 0.0001"/>
+      <geom name="press_geom" type="mesh" mesh="press_block_mesh"
+            contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1"/>
     </body>
 
   </worldbody>
@@ -145,13 +156,21 @@
          motor_joint axis="0 0 -1"(正=CW), dome_joint axis="0 0 1"(正=CCW)
          CWモーターに対してCCWドーム → polycoef正 -->
     <joint joint1="dome_joint" joint2="motor_joint" polycoef="0 0.33333333 0 0 0"/>
+    <!-- シャフト接合: press_slide = button_slide（button_slideがprimary）
+         motor が button_slide を直接駆動 → press_slide が受動的に追従
+         button の内蔵スプリングが press_block の復元力も担う -->
+    <joint joint1="press_slide" joint2="button_slide" polycoef="0 1 0 0 0"/>
   </equality>
 
   <actuator>
     <motor name="turret_motor" joint="motor_joint"
            gear="10" ctrllimited="true" ctrlrange="-1 1"/>
-    <position name="press_ctrl"   joint="press_slide"
-              kp="50" ctrllimited="true" ctrlrange="0.0 0.030"/>
+    <!-- press_ctrl: button_slide を直接駆動（test_force_sensor.xmlと同じ設計）
+         ctrl=0  → 力ゼロ → スプリングが button と press_block を復元
+         ctrl>0  → button と press_block が一緒に下降
+         ctrl=10N → 最大（実機確認値） -->
+    <motor name="press_ctrl" joint="button_slide"
+           gear="1" ctrllimited="true" ctrlrange="0 10"/>
     <position name="wall_a_x_ctrl" joint="wall_a_x"
               kp="50" ctrllimited="true" ctrlrange="-0.08 0.08"/>
     <position name="wall_a_y_ctrl" joint="wall_a_y"
@@ -169,8 +188,8 @@
     <jointpos  name="dome_angle"   joint="dome_joint"/>
     <jointvel  name="dome_vel"     joint="dome_joint"/>
     <!-- センサー位置・姿勢 -->
-    <framepos  name="sonar_pos"  objtype="site" objname="sonar_site"/>
-    <framequat name="sonar_quat" objtype="site" objname="sonar_site"/>
+    <framepos  name="distance_pos"  objtype="site" objname="distance_site"/>
+    <framequat name="distance_quat" objtype="site" objname="distance_site"/>
     <framepos  name="color_pos"  objtype="site" objname="color_site"/>
     <framequat name="color_quat" objtype="site" objname="color_site"/>
     <!-- スタート/ストップトリガー -->

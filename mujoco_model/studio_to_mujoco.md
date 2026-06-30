@@ -275,13 +275,22 @@ bevel_gear_12        →  <body name="motor_rotor">           ← motor_joint(hi
 
 radar_dome           →  <body name="radar_dome">            ← dome_joint(hinge)
                             <geom name="dome_geom" .../>
-                            <site name="sonar_site" .../>
-                            <site name="color_site" .../>
+  37316c01.dat       →    <body name="sonar_sensor" pos="..." euler="...">
+                              <include file=".../distance_sensor_body.xml"/>
+                            </body>
+  37308c01.dat       →    <body name="color_sensor" pos="...">
+                              <geom name="color_geom" .../>
+                              <site name="color_site" .../>
+                            </body>
 ```
 
 `motor_rotor`（12Tギア）と `radar_dome`（36Tギア）は、いずれも `radar_base` の直下に
 **独立した body** として配置し、それぞれに `hinge` jointを持たせる。2つのjointは
 equality制約で連動させる（[6.3](#63-equality制約によるギア連動)）。
+
+距離センサー（`37316c01.dat`）は `libspikehat_sim` のコンポーネント
+（`distance_sensor_body.xml`）を `<include>` で組み込む。
+カラーセンサー（`37308c01.dat`）は現状インラインSTLのまま（今後コンポーネント化予定）。
 
 ### 6.2 配置（pos/euler）はBlender出力どおりにならない
 
@@ -414,7 +423,7 @@ WASDキーは使用しない。矢印キーは `key_callback` で `_KEY_RIGHT/LE
 |---|---|---|
 | `turret_angle`/`turret_vel` | jointpos/jointvel (`motor_joint`) | `motor_get_position` |
 | `dome_angle`/`dome_vel` | jointpos/jointvel (`dome_joint`) | （デバッグ用、API未使用） |
-| `sonar_pos`/`sonar_quat` | framepos/framequat (`sonar_site`) | `distance_read`（前方レイキャスト） |
+| `distance_pos`/`distance_quat` | framepos/framequat (`distance_site`) | `distance_read`（前方レイキャスト） |
 | `color_pos`/`color_quat` | framepos/framequat (`color_site`) | `color_read_hsv`/`color_read_rgb`（下方レイキャスト） |
 | `force_touch` | touch (`force_site`) | `force_is_pressed` |
 
@@ -553,10 +562,18 @@ Studioモデルを変更した場合、変更の種類によって必要な作�
 
 #### センサーの取り付け位置変更（例：距離センサーの位置を変える）
 
-1. STL再生成（`blender_export.py`）
-2. `compute_local_site_pos` がsite位置の初期値を自動計算してログに出力する
-3. ビューアで実測値と見比べながら `<site pos="..."/>` を微調整
-   （`docs/visualization.md` の手順で検出角度を確認する）
+距離センサーは `libspikehat_sim` のコンポーネント（`include`）として組み込んでいる。
+位置変更時は以下の手順を踏む：
+
+1. `sonar_radar09.io` でセンサーの取り付け位置・向きを変更して保存
+2. Blenderで `sonar_radar09.io` をインポートし、センサー (`37316c01.dat`) と
+   基準ボディ (`bevel_gear_36` 等) の `matrix_world.translation` を取得
+3. `pos = -(T_sensor - T_ref) * SCALE`（mj_x,mj_y符号反転、mj_z符号そのまま）を計算
+4. `sonar_radar.xml` の `sonar_sensor` body の `pos` を更新
+5. `euler` は `R_sensor_world @ Rx(-90°) @ Rz(180°)` をT_conj変換して求める
+   （`studio_to_mujoco.md` 付属の変換スクリプトを参照）
+
+カラーセンサーは現状インラインSTLのため従来通り `blender_export.py` を再実行。
 
 #### ギア比の変更（例：12T-36T → 12T-24T）
 

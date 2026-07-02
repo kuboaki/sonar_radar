@@ -392,6 +392,20 @@ def compute_local_body_pos(obj, rotor_axis_obj):
     x, y, z = pos.x - ax.x, pos.y - ax.y, pos.z - ax.z
     return -x * SCALE, -y * SCALE, z * SCALE
 
+
+def compute_local_body_euler(sensor_obj, ref_obj):
+    """
+    sensor_obj の回転を ref_obj フレーム相対の MuJoCo euler (XYZ度) に変換する。
+    T_conj = diag(-1,-1,1) で Blender → MuJoCo 回転変換を行う。
+    """
+    R_ref = ref_obj.matrix_world.to_3x3().normalized()
+    R_sen = sensor_obj.matrix_world.to_3x3().normalized()
+    R_rel = R_ref.inverted() @ R_sen
+    T_conj = mathutils.Matrix(((-1, 0, 0), (0, -1, 0), (0, 0, 1)))
+    R_mj   = T_conj @ R_rel @ T_conj
+    euler_rad = R_mj.to_euler('XYZ')
+    return [math.degrees(a) for a in euler_rad]
+
 # ── センサーオブジェクト取得 ──────────────────────────────
 
 sonar_obj = bpy.data.objects.get("37316c01.dat")
@@ -460,13 +474,15 @@ else:
 # ── センサー body pos 計算 ────────────────────────────────
 
 if gear36_root:
-    print("\n  -- センサー body pos（radar_dome ローカル座標）--")
+    print("\n  -- センサー body pos/euler（radar_dome ローカル座標）--")
     if sonar_obj:
         spx, spy, spz = compute_local_body_pos(sonar_obj, gear36_root)
         print(f'  sonar_sensor body pos="{spx:.4f} {spy:.4f} {spz:.4f}"')
     if color_obj:
         cpx, cpy, cpz = compute_local_body_pos(color_obj, gear36_root)
+        cex, cey, cez = compute_local_body_euler(color_obj, gear36_root)
         print(f'  color_sensor body pos="{cpx:.4f} {cpy:.4f} {cpz:.4f}"')
+        print(f'  color_sensor body euler="{cex:.1f} {cey:.1f} {cez:.1f}"')
 
 # ── obstacle_wall_a エクスポート ──────────────────────────
 
@@ -550,12 +566,13 @@ if all_base_meshes and gear36_root:
         print(f'    </body>')
     if color_obj and gear36_root:
         cpx, cpy, cpz = compute_local_body_pos(color_obj, gear36_root)
-        print(f'    <!-- カラーセンサー: センサー原点を body 原点とする -->')
-        print(f'    <body name="color_sensor" pos="{cpx:.4f} {cpy:.4f} {cpz:.4f}">')
-        print(f'      <geom name="color_geom" type="mesh" mesh="color_sensor_mesh"')
-        print(f'            contype="0" conaffinity="0" rgba="0.8 0.8 0.2 1"/>')
-        print(f'      <!-- color_site: センサー下面方向（-Z）へ3プレート = -0.0096m -->')
-        print(f'      <site name="color_site" pos="0 0 -0.0096" size="0.01" rgba="1 1 0 1"/>')
+        cex, cey, cez = compute_local_body_euler(color_obj, gear36_root)
+        print(f'    <!-- カラーセンサー: <include>方式 -->')
+        print(f'    <!-- pos: gear36基準の単純差分。euler: ワールド回転をT_conjで変換 -->')
+        print(f'    <!-- MuJoCo<include>はルート<body>タグを除去し子要素を挿入する -->')
+        print(f'    <!-- asset に color_sensor_mesh が不要（libspikehat_sim側で管理） -->')
+        print(f'    <body name="color_sensor" pos="{cpx:.4f} {cpy:.4f} {cpz:.4f}" euler="{cex:.1f} {cey:.1f} {cez:.1f}">')
+        print(f'      <include file="../sim/libspikehat_sim/examples/components/color_sensor_body.xml"/>')
         print(f'    </body>')
     print(f'  </body>')
     print(f'</body>')

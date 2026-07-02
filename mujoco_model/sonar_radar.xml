@@ -15,7 +15,7 @@
     <mesh name="radar_base_blue_mesh" file="radar_base_blue.stl" scale="1 1 1"/>
     <mesh name="radar_dome_mesh"      file="radar_dome.stl"      scale="1 1 1"/>
     <mesh name="distance_sensor_mesh" file="distance_sensor.stl" scale="1 1 1"/>
-    <mesh name="color_sensor_mesh"    file="color_sensor.stl"    scale="1 1 1"/>
+    <mesh name="color_sensor_mesh"    file="color_sensor.stl"/>
     <mesh name="force_sensor_body_mesh" file="force_sensor_body.stl" scale="1 1 1"/>
     <mesh name="button_mesh"           file="button.stl"           scale="1 1 1"/>
     <mesh name="press_block_mesh"      file="press_block.stl"      scale="1 1 1"/>
@@ -121,10 +121,13 @@
           <body name="sonar_sensor" pos="0.0010 -0.0093 0.0227" euler="0 0 -175">
             <include file="../sim/libspikehat_sim/examples/components/distance_sensor_body.xml"/>
           </body>
-          <body name="color_sensor" pos="-0.0032 0.0393 0.0387">
-            <geom name="color_geom" type="mesh" mesh="color_sensor_mesh"
-                  contype="0" conaffinity="0" rgba="0.8 0.8 0.2 1"/>
-            <site name="color_site" pos="0 0 -0.0096" size="0.01" rgba="1 1 0 1"/>
+          <!-- カラーセンサー（libspikehat_sim color_sensor_body コンポーネント）
+               pos:   gear36基準の単純差分（blender_export.py compute_local_body_pos）
+               euler: ワールド回転をT_conj(diag(-1,-1,1))でMuJoCo変換
+                      Rx(-90°)@Ry(-180°) → 検出面(body local +Y)が世界-Z(下向き)
+               MuJoCo<include>はルート<body>タグを除去しinertial/geom/siteを挿入する -->
+          <body name="color_sensor" pos="-0.0032 0.0393 0.0387" euler="90 5 180">
+            <include file="../sim/libspikehat_sim/examples/components/color_sensor_body.xml"/>
           </body>
         </body>
 

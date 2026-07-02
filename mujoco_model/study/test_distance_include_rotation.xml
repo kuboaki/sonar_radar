@@ -1,0 +1,19 @@
+<mujoco model="test_distance_include_rotation">
+  <compiler angle="degree" meshdir="meshes/"/>
+  <option timestep="0.001" gravity="0 0 -9.81"/>
+  <asset>
+    <mesh name="distance_sensor_mesh" file="distance_sensor.stl" scale="1 1 1"/>
+  </asset>
+  <worldbody>
+    <light name="light_top" pos="0 0 1.0" dir="0 0 -1" diffuse="0.8 0.8 0.8" directional="true"/>
+    <geom name="floor" type="plane" size="1 1 0.01" rgba="0.6 0.6 0.6 1"/>
+
+    <!-- gear36相当: ワールド原点・無回転（MuJoCoの静止姿勢を模す） -->
+    <body name="gear36_dummy" pos="0 0 0.05" euler="0 0 0">
+      <geom type="sphere" size="0.003" rgba="1 1 0 1"/>
+      <body name="sonar_sensor" pos="0.0019 -0.0193 0.0223" euler="0 0 0">
+        <include file="../sim/libspikehat_sim/examples/components/distance_sensor_body.xml"/>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

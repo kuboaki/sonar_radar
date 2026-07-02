@@ -159,20 +159,20 @@
          motor_joint axis="0 0 -1"(正=CW), dome_joint axis="0 0 1"(正=CCW)
          CWモーターに対してCCWドーム → polycoef正 -->
     <joint joint1="dome_joint" joint2="motor_joint" polycoef="0 0.33333333 0 0 0"/>
-    <!-- シャフト接合: press_slide = button_slide（button_slideがprimary）
-         motor が button_slide を直接駆動 → press_slide が受動的に追従
+    <!-- シャフト接合: button_slide = press_slide（press_slideがprimary）
+         motor が press_slide(press_block)を駆動 → button_slide が受動的に追従
          button の内蔵スプリングが press_block の復元力も担う -->
-    <joint joint1="press_slide" joint2="button_slide" polycoef="0 1 0 0 0"/>
+    <joint joint1="button_slide" joint2="press_slide" polycoef="0 1 0 0 0"/>
   </equality>
 
   <actuator>
     <motor name="turret_motor" joint="motor_joint"
            gear="10" ctrllimited="true" ctrlrange="-1 1"/>
-    <!-- press_ctrl: button_slide を直接駆動（test_force_sensor.xmlと同じ設計）
-         ctrl=0  → 力ゼロ → スプリングが button と press_block を復元
-         ctrl>0  → button と press_block が一緒に下降
+    <!-- press_ctrl: press_slide(press_block)を駆動
+         ctrl=0  → 力ゼロ → スプリングが press_block と button を復元
+         ctrl>0  → press_block が下降 → equality で button も追従
          ctrl=10N → 最大（実機確認値） -->
-    <motor name="press_ctrl" joint="button_slide"
+    <motor name="press_ctrl" joint="press_slide"
            gear="1" ctrllimited="true" ctrlrange="0 10"/>
     <position name="wall_a_x_ctrl" joint="wall_a_x"
               kp="50" ctrllimited="true" ctrlrange="-0.08 0.08"/>

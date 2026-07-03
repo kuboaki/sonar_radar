@@ -54,6 +54,12 @@ OUTPUT_DIR = "/Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes"
 LOG_PATH   = "/Users/kuboaki/Projects/sonar_radar/mujoco_model/blender/blender_export_log.txt"
 SCALE = 0.0004  # LDU → m
 
+# ドームのギア噛み合わせオフセット（sonar_radar.py の SENSOR_HOME_OFFSET と一致させること）
+# Blender モデルはドームが物理的な「ホーム位置」（5°オフセット）にある状態を表すが、
+# MuJoCo の qpos=0 はドームがゼロ位置にある状態を表すため、
+# カラーセンサーの euler Y 成分にこのオフセットを加算して補正する。
+SENSOR_HOME_OFFSET_DEG = 5.0
+
 
 # ── ログ ─────────────────────────────────────────────────
 
@@ -220,6 +226,7 @@ blue_root    = bpy.data.objects.get("marker_blue")
 dome_root    = bpy.data.objects.get("radar_dome")
 gear12_root  = bpy.data.objects.get("bevel_gear_12")
 gear36_root  = bpy.data.objects.get("bevel_gear_36")
+starter_root = bpy.data.objects.get("starter")
 wall_a_root  = bpy.data.objects.get("obstacle_wall_a")
 wall_b_root  = bpy.data.objects.get("obstacle_wall_b")
 
@@ -241,6 +248,7 @@ print(f"  marker_blue     = {len(blue_meshes)} MESH  {'OK' if blue_root   else '
 print(f"  radar_dome      = {len(dome_meshes)} MESH  {'OK' if dome_root   else 'NOT FOUND'}")
 print(f"  bevel_gear_12   = {len(gear12_meshes)} MESH  {'OK' if gear12_root else 'NOT FOUND'}")
 print(f"  bevel_gear_36   = {len(gear36_meshes)} MESH  {'OK' if gear36_root else 'NOT FOUND'}")
+print(f"  starter         =        EMPTY  {'OK' if starter_root else 'NOT FOUND'}")
 print(f"  obstacle_wall_a = {len(wall_a_meshes)} MESH  {'OK' if wall_a_root else 'NOT FOUND'}")
 print(f"  obstacle_wall_b = {len(wall_b_meshes)} MESH  {'OK' if wall_b_root else 'NOT FOUND'}")
 
@@ -452,23 +460,16 @@ if sonar_obj:
 else:
     print("  WARNING: 37316c01.dat (距離センサー) が見つかりません")
 
-# ── color_sensor エクスポート ─────────────────────────────
+# ── color_sensor: STL は libspikehat_sim で管理、ここでは pos/euler のみ計算 ──
+# color_sensor.stl は libspikehat_sim/examples/meshes/color_sensor.stl が正規版。
+# blender_export_color_sensor.py（libspikehat_sim側）で生成・管理するため、
+# ここでは STL 生成を行わず pos/euler の計算結果だけを出力する。
 
 print("\n" + "=" * 60)
-print("color_sensor 処理")
+print("color_sensor 処理（pos/euler 計算のみ、STL 生成は libspikehat_sim 側）")
 print("=" * 60)
 
-if color_obj:
-    color_meshes = [color_obj] + [c for c in color_obj.children_recursive if c.type == 'MESH']
-    export_stl(
-        meshes         = color_meshes,
-        name           = "color_sensor",
-        center_mode    = "rotor_axis",
-        rotate_z_deg   = 0.0,
-        rotor_axis_obj = color_obj,
-        out_filename   = "color_sensor.stl",
-    )
-else:
+if not color_obj:
     print("  WARNING: 37308c01.dat (カラーセンサー) が見つかりません")
 
 # ── センサー body pos 計算 ────────────────────────────────
@@ -481,8 +482,63 @@ if gear36_root:
     if color_obj:
         cpx, cpy, cpz = compute_local_body_pos(color_obj, gear36_root)
         cex, cey, cez = compute_local_body_euler(color_obj, gear36_root)
+        cey_corrected = cey - SENSOR_HOME_OFFSET_DEG
         print(f'  color_sensor body pos="{cpx:.4f} {cpy:.4f} {cpz:.4f}"')
-        print(f'  color_sensor body euler="{cex:.1f} {cey:.1f} {cez:.1f}"')
+        print(f'  color_sensor body euler (raw from Blender) ="{cex:.1f} {cey:.1f} {cez:.1f}"')
+        print(f'  color_sensor body euler (+ SENSOR_HOME_OFFSET {SENSOR_HOME_OFFSET_DEG}°) ="{cex:.1f} {cey_corrected:.1f} {cez:.1f}"  ← XML に使う値')
+
+# ── starter (sensor_mount): force_sensor台座の pos/euler 計算 ──────────────
+# starterはEMPTYオブジェクト。radar_base座標系(base_shared_offset原点)に対する
+# 相対pos と、Blender→MuJoCo変換後のeulerを出力する。
+# sonar_radar.xmlの sensor_mount body pos/euler に使用する。
+
+print("\n" + "=" * 60)
+print("starter (sensor_mount) 処理（pos/euler 計算のみ）")
+print("=" * 60)
+
+if not starter_root:
+    print("  WARNING: starter (EMPTY) が見つかりません")
+elif not all_base_meshes:
+    print("  WARNING: radar_base メッシュが見つかりません（base_shared_offset 計算不可）")
+else:
+    (bx0, bx1), (by0, by1), (bz0, bz1) = combined_bbox(all_base_meshes)
+    # base_shared_offset: STL原点(radar_base中心下面)のBlender world座標
+    boff_x = -(bx0 + bx1) / 2
+    boff_y = -(by0 + by1) / 2
+    boff_z = -bz0
+
+    st = starter_root.matrix_world.translation
+    # radar_base原点(Blender world)に対するstarter相対座標 → MuJoCo座標へ変換
+    rx = st.x + boff_x
+    ry = st.y + boff_y
+    rz = st.z + boff_z
+    sm_x = -rx * SCALE
+    sm_y = -ry * SCALE
+    sm_z =  rz * SCALE
+
+    # euler: starter EMPTY ではなく force_sensor 本体メッシュ（最大 verts の子メッシュ）
+    # の回転を radar_base 基準で計算する。
+    # EMPTY の matrix_world/matrix_local は LDraw インポートの座標変換アーティファクトが
+    # 混入するため使用しない。メッシュの回転は実際のパーツ配置を反映している。
+    starter_mesh_children = [o for o in bpy.data.objects
+                             if o.parent == starter_root and o.type == 'MESH']
+    if starter_mesh_children:
+        # 最大頂点数のメッシュ = force_sensor 本体
+        fsm = max(starter_mesh_children, key=lambda o: len(o.data.vertices))
+        sex_raw, sey_raw, sez_raw = compute_local_body_euler(fsm, base_root)
+        print(f'  (euler source: {fsm.name}, verts={len(fsm.data.vertices)})')
+        print(f'  sensor_mount euler (computed raw) ="{sex_raw:.1f} {sey_raw:.1f} {sez_raw:.1f}"')
+        print(f'  NOTE: force_sensor_body.xml のボタン軸(+Z)と LDraw パーツの座標系がずれているため')
+        print(f'        computed euler を直接使わず、MuJoCo ビューアで確認して XML を設定すること。')
+        print(f'        このモデルでは euler="0 0 90"（ボタン上向き）が正解。')
+        sex, sey, sez = sex_raw, sey_raw, sez_raw
+    else:
+        sex, sey, sez = 0.0, 0.0, 0.0
+        print('  WARNING: starter 子メッシュが見つからない。euler=(0,0,0) を使用')
+
+    print(f'  sensor_mount body pos="{sm_x:.4f} {sm_y:.4f} {sm_z:.4f}"')
+    print(f'  sensor_mount body euler="{sex:.1f} {sey:.1f} {sez:.1f}"  ← XML に使う値')
+    print(f'  (starter Blender world pos: {st.x:.4f} {st.y:.4f} {st.z:.4f})')
 
 # ── obstacle_wall_a エクスポート ──────────────────────────
 

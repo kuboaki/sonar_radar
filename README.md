@@ -54,6 +54,9 @@ Avoid calling `sonar_radar.py` directly.
 ## Running in Simulation (MuJoCo)
 
 - macOS / Linux with `mujoco` and `libspikehat_sim` installed (see `sim/libspikehat_sim/`)
+  - **Important**: the `mujoco` pip package version must match `/Applications/MuJoCo.app`.
+    A version mismatch causes a crash in `mj_ray` due to `mjModel` ABI incompatibility.
+    Example: MuJoCo.app 3.10.0 → `pip install mujoco==3.10.0`, then rebuild `libspikehat_sim`.
 - For viewer mode on macOS, use `mjpython` (required by MuJoCo's passive viewer)
 
 ```bash

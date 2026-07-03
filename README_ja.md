@@ -65,11 +65,17 @@ bash run.sh
 ```bash
 cd sonar_radar   # リポジトリルート
 uv venv --python /opt/homebrew/bin/python3.12
-uv pip install mujoco
+uv pip install mujoco==3.10.0
 ```
 
 > **注意**: uv管理のスタンドアロンPython（`~/.local/share/uv/python/`）では
 > `mjpython` が動作しません。必ずHomebrew製Pythonを使用してください。
+
+> **注意**: mujoco の pip パッケージのバージョンと MuJoCo.app（`/Applications/MuJoCo.app`）の
+> バージョンを必ず一致させてください。バージョンが異なると `libspikehat_sim` が
+> `mj_ray` 内でクラッシュします（`mjModel` 構造体レイアウトの ABI 非互換）。
+> MuJoCo.app を更新した場合は `mujoco` pip パッケージも同じバージョンに合わせ、
+> `sim/libspikehat_sim/build` を再ビルドしてください。
 
 **2. libspikehat_simのビルド**
 

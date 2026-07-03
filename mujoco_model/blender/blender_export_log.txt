@@ -4,94 +4,102 @@
 ============================================================
 シーン内オブジェクト一覧
 ============================================================
-  [MESH ] 15458.dat                                parent=obstacle_wall_b  verts=14732
-  [MESH ] 18651.dat                                parent=ground_plate  verts=1447
-  [MESH ] 18651.dat.001                            parent=ground_plate  verts=1447
-  [MESH ] 18651.dat.002                            parent=ground_plate  verts=1447
-  [MESH ] 18651.dat.003                            parent=ground_plate  verts=1447
-  [MESH ] 18651.dat.004                            parent=obstacle_wall_a  verts=1447
-  [MESH ] 18651.dat.005                            parent=obstacle_wall_a  verts=1447
-  [MESH ] 18651.dat.006                            parent=obstacle_wall_b  verts=1447
-  [MESH ] 18651.dat.007                            parent=obstacle_wall_b  verts=1447
-  [MESH ] 2780.dat                                 parent=radar_base  verts=2892
-  [MESH ] 2780.dat.001                             parent=radar_base  verts=2892
-  [MESH ] 2780.dat.002                             parent=radar_base  verts=2892
-  [MESH ] 2780.dat.003                             parent=radar_base  verts=2892
-  [MESH ] 2780.dat.004                             parent=ground_plate  verts=2892
-  [MESH ] 2780.dat.005                             parent=ground_plate  verts=2892
-  [MESH ] 2780.dat.006                             parent=ground_plate  verts=2892
-  [MESH ] 2780.dat.007                             parent=ground_plate  verts=2892
-  [MESH ] 2780.dat.008                             parent=radar_dome  verts=2892
-  [MESH ] 2780.dat.009                             parent=radar_dome  verts=2892
-  [MESH ] 2780.dat.010                             parent=radar_dome  verts=2892
-  [MESH ] 2780.dat.011                             parent=radar_dome  verts=2892
-  [MESH ] 2780.dat.012                             parent=radar_dome  verts=2892
-  [MESH ] 2780.dat.013                             parent=radar_dome  verts=2892
-  [MESH ] 2780.dat.014                             parent=radar_dome  verts=2892
-  [MESH ] 2780.dat.015                             parent=radar_dome  verts=2892
+  [MESH ] 15458.dat                                parent=obstacle_wall_b  verts=14836
+  [MESH ] 18651.dat                                parent=ground_plate  verts=1791
+  [MESH ] 18651.dat.001                            parent=ground_plate  verts=1791
+  [MESH ] 18651.dat.002                            parent=ground_plate  verts=1791
+  [MESH ] 18651.dat.003                            parent=ground_plate  verts=1791
+  [MESH ] 18651.dat.004                            parent=obstacle_wall_a  verts=1791
+  [MESH ] 18651.dat.005                            parent=obstacle_wall_a  verts=1791
+  [MESH ] 18651.dat.006                            parent=obstacle_wall_b  verts=1791
+  [MESH ] 18651.dat.007                            parent=obstacle_wall_b  verts=1791
+  [MESH ] 18674.dat                                parent=press_block  verts=944
+  [MESH ] 2780.dat                                 parent=radar_base  verts=3886
+  [MESH ] 2780.dat.001                             parent=radar_base  verts=3886
+  [MESH ] 2780.dat.002                             parent=radar_base  verts=3886
+  [MESH ] 2780.dat.003                             parent=radar_base  verts=3886
+  [MESH ] 2780.dat.004                             parent=ground_plate  verts=3886
+  [MESH ] 2780.dat.005                             parent=ground_plate  verts=3886
+  [MESH ] 2780.dat.006                             parent=ground_plate  verts=3886
+  [MESH ] 2780.dat.007                             parent=ground_plate  verts=3886
+  [MESH ] 2780.dat.008                             parent=radar_dome  verts=3886
+  [MESH ] 2780.dat.009                             parent=radar_dome  verts=3886
+  [MESH ] 2780.dat.010                             parent=radar_dome  verts=3886
+  [MESH ] 2780.dat.011                             parent=radar_dome  verts=3886
+  [MESH ] 2780.dat.012                             parent=radar_dome  verts=3886
+  [MESH ] 2780.dat.013                             parent=radar_dome  verts=3886
+  [MESH ] 2780.dat.014                             parent=radar_dome  verts=3886
+  [MESH ] 2780.dat.015                             parent=radar_dome  verts=3886
   [MESH ] 3036.dat                                 parent=obstacle_wall_a  verts=2928
   [MESH ] 3069b.dat                                parent=marker_blue  verts=72
   [MESH ] 3069b.dat.001                            parent=marker_blue  verts=72
   [MESH ] 3069b.dat.002                            parent=marker_red  verts=72
   [MESH ] 3069b.dat.003                            parent=marker_red  verts=72
-  [MESH ] 32062.dat                                parent=bevel_gear_12  verts=382
+  [MESH ] 32062.dat                                parent=bevel_gear_12  verts=370
   [MESH ] 32073.dat                                parent=bevel_gear_36  verts=90
   [MESH ] 32270.dat                                parent=bevel_gear_12  verts=1884
   [MESH ] 32316.dat                                parent=radar_base  verts=4252
   [MESH ] 32316.dat.001                            parent=radar_base  verts=4252
   [MESH ] 32316.dat.002                            parent=radar_dome  verts=4252
-  [MESH ] 32498.dat                                parent=bevel_gear_36  verts=12266
+  [MESH ] 32498.dat                                parent=bevel_gear_36  verts=12586
   [MESH ] 32524.dat                                parent=radar_dome  verts=5988
   [MESH ] 32524.dat.001                            parent=radar_dome  verts=5988
   [MESH ] 32524.dat.002                            parent=radar_dome  verts=5988
-  [MESH ] 37308c01.dat                             parent=radar_dome  verts=6817
-  [MESH ] 37316c01.dat                             parent=radar_dome  verts=14568
+  [MESH ] 37308c01.dat                             parent=radar_dome  verts=7022
+  [MESH ] 37316c01.dat                             parent=radar_dome  verts=15804
   [MESH ] 3738.dat                                 parent=obstacle_wall_a  verts=2212
-  [MESH ] 3749.dat                                 parent=radar_base  verts=791
-  [MESH ] 3749.dat.001                             parent=radar_base  verts=791
-  [MESH ] 3749.dat.002                             parent=radar_base  verts=791
-  [MESH ] 3749.dat.003                             parent=radar_base  verts=791
-  [MESH ] 39369.dat                                parent=ground_plate  verts=188276
+  [MESH ] 3749.dat                                 parent=radar_base  verts=1135
+  [MESH ] 3749.dat.001                             parent=radar_base  verts=1135
+  [MESH ] 3749.dat.002                             parent=radar_base  verts=1135
+  [MESH ] 3749.dat.003                             parent=radar_base  verts=1135
+  [MESH ] 39369.dat                                parent=ground_plate  verts=188336
+  [MESH ] 3941.dat                                 parent=press_block  verts=1296
   [MESH ] 39789.dat                                parent=marker_blue  verts=1364
   [MESH ] 39789.dat.001                            parent=marker_red  verts=1364
-  [MESH ] 39790.dat                                parent=radar_base  verts=36312
-  [MESH ] 39793.dat                                parent=radar_base  verts=6746
-  [MESH ] 39793.dat.001                            parent=radar_base  verts=6746
+  [MESH ] 39790.dat                                parent=radar_base  verts=36792
+  [MESH ] 39793.dat                                parent=radar_base  verts=6946
+  [MESH ] 39793.dat.001                            parent=radar_base  verts=6946
   [MESH ] 41239.dat                                parent=ground_plate  verts=11196
   [MESH ] 41239.dat.001                            parent=ground_plate  verts=11196
-  [MESH ] 43093.dat                                parent=radar_base  verts=1447
-  [MESH ] 43093.dat.001                            parent=radar_base  verts=1447
-  [MESH ] 48989.dat                                parent=radar_dome  verts=5030
-  [MESH ] 48989.dat.001                            parent=radar_dome  verts=5030
-  [MESH ] 48989.dat.002                            parent=obstacle_wall_a  verts=5030
-  [MESH ] 55615.dat                                parent=radar_base  verts=6326
-  [MESH ] 55615.dat.001                            parent=radar_base  verts=6326
-  [MESH ] 6558.dat                                 parent=radar_base  verts=4164
-  [MESH ] 6558.dat.001                             parent=radar_base  verts=4164
-  [MESH ] 6558.dat.002                             parent=radar_dome  verts=4164
-  [MESH ] 6558.dat.003                             parent=radar_dome  verts=4164
-  [MESH ] 6589.dat                                 parent=bevel_gear_36  verts=1468
-  [MESH ] 87082.dat                                parent=radar_dome  verts=3660
-  [MESH ] 87082.dat.001                            parent=radar_dome  verts=3660
-  [MESH ] 99773.dat                                parent=radar_base  verts=4602
+  [MESH ] 43093.dat                                parent=radar_base  verts=1791
+  [MESH ] 43093.dat.001                            parent=radar_base  verts=1791
+  [MESH ] 4519.dat                                 parent=press_block  verts=90
+  [MESH ] 48989.dat                                parent=radar_base  verts=6074
+  [MESH ] 48989.dat.001                            parent=radar_dome  verts=6074
+  [MESH ] 48989.dat.002                            parent=radar_dome  verts=6074
+  [MESH ] 48989.dat.003                            parent=obstacle_wall_a  verts=6074
+  [MESH ] 55615.dat                                parent=radar_base  verts=7374
+  [MESH ] 55615.dat.001                            parent=radar_base  verts=7374
+  [MESH ] 6558.dat                                 parent=radar_base  verts=5602
+  [MESH ] 6558.dat.001                             parent=radar_base  verts=5602
+  [MESH ] 6558.dat.002                             parent=radar_dome  verts=5602
+  [MESH ] 6558.dat.003                             parent=radar_dome  verts=5602
+  [MESH ] 6589.dat                                 parent=bevel_gear_36  verts=1444
+  [MESH ] 87082.dat                                parent=radar_dome  verts=4188
+  [MESH ] 87082.dat.001                            parent=radar_dome  verts=4188
+  [MESH ] 99773.dat                                parent=radar_base  verts=4606
   [EMPTY] bevel_gear_12                            parent=radar_base
-  [EMPTY] bevel_gear_36                            parent=sonar_radar08.io
-  [EMPTY] ground_plate                             parent=sonar_radar08.io
+  [EMPTY] bevel_gear_36                            parent=sonar_radar09.io
+  [EMPTY] ground_plate                             parent=sonar_radar09.io
+  [MESH ] m71d95b20_2026629_065423.dat             parent=starter  verts=10306
+  [MESH ] m71d95b20_2026629_070814.dat             parent=starter  verts=1365
   [MESH ] m71d95b20_202662_032825.dat              parent=bevel_gear_12  verts=3730
-  [MESH ] m71d95b20_202662_110634.dat              parent=radar_base  verts=24207
+  [MESH ] m71d95b20_202662_110634.dat              parent=radar_base  verts=24205
   [EMPTY] marker_blue                              parent=radar_base
   [EMPTY] marker_red                               parent=radar_base
-  [EMPTY] obstacle_wall_a                          parent=sonar_radar08.io
-  [EMPTY] obstacle_wall_b                          parent=sonar_radar08.io
-  [EMPTY] radar_base                               parent=sonar_radar08.io
-  [EMPTY] radar_dome                               parent=sonar_radar08.io
-  [EMPTY] sonar_radar08.io                         parent=(root)
+  [EMPTY] obstacle_wall_a                          parent=sonar_radar09.io
+  [EMPTY] obstacle_wall_b                          parent=sonar_radar09.io
+  [EMPTY] press_block                              parent=starter
+  [EMPTY] radar_base                               parent=sonar_radar09.io
+  [EMPTY] radar_dome                               parent=sonar_radar09.io
+  [EMPTY] sonar_radar09.io                         parent=(root)
+  [EMPTY] starter                                  parent=sonar_radar09.io
     SKIP EMPTY: bevel_gear_12
     SKIP EMPTY: marker_blue
     SKIP EMPTY: marker_red
 
 収集結果:
-  radar_base      = 21 MESH  OK
+  radar_base      = 22 MESH  OK
   ground_plate    = 11 MESH  OK
   marker_red      = 3 MESH  OK
   marker_blue     = 3 MESH  OK
@@ -104,9 +112,9 @@
 ============================================================
 STL面数プリフライトチェック (上限 200,000)
 ============================================================
-  radar_base_gray (31パーツ):  158,217  OK
-  radar_base_panel (39369.datのみ): 178,620  OK
-  radar_dome:                     85,312  OK
+  radar_base_gray (32パーツ):  182,125  OK
+  radar_base_panel (39369.datのみ): 178,684  OK
+  radar_dome:                    101,048  OK
 
 ============================================================
 radar_base 共有オフセット計算
@@ -124,20 +132,20 @@ radar_base_panel 処理（39369.dat のみ）
   共有オフセット使用: (70.00, -131.00, 23.96) LDU
   オフセット: (70.00, -131.00, 23.96) LDU
   Saved: /Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes/radar_base_panel.stl
-  頂点数: 188276  三角面数: 178620
+  頂点数: 188336  三角面数: 178684
   MuJoCo Z底面: -0.1160 m  Z上面: -0.0280 m
   half_Z: 0.0440 m
 
 ============================================================
 radar_base_gray 処理（radar_base + ground_plate の 39369.dat 以外）
 ============================================================
-  MESHオブジェクト数: 31
+  MESHオブジェクト数: 32
   統合bbox (変換前):
     X[-259.9, 40.9]  Y[-158.9, 259.9]  Z[-24.0, 56.6] LDU
   共有オフセット使用: (70.00, -131.00, 23.96) LDU
   オフセット: (70.00, -131.00, 23.96) LDU
   Saved: /Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes/radar_base_gray.stl
-  頂点数: 165471  三角面数: 158217
+  頂点数: 188791  三角面数: 182125
   MuJoCo Z底面: -0.0516 m  Z上面: 0.1160 m
   half_Z: 0.0838 m
 
@@ -177,7 +185,7 @@ bevel_gear_12 処理
   旋回軸 (Blender世界座標): (-89.40, 10.58, 35.39) LDU
   オフセット: (89.40, -10.58, -35.39) LDU
   Saved: /Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes/bevel_gear_12.stl
-  頂点数: 5996  三角面数: 5458
+  頂点数: 5984  三角面数: 5458
   MuJoCo Z底面: -0.0116 m  Z上面: 0.0115 m
   half_Z: 0.0116 m
 
@@ -191,7 +199,7 @@ bevel_gear_36 処理
   旋回軸 (Blender世界座標): (-89.13, -51.12, 50.99) LDU
   オフセット: (89.13, 51.12, -50.99) LDU
   Saved: /Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes/bevel_gear_36.stl
-  頂点数: 13824  三角面数: 12748
+  頂点数: 14120  三角面数: 13036
   MuJoCo Z底面: -0.0190 m  Z上面: 0.0185 m
   half_Z: 0.0187 m
 
@@ -207,7 +215,7 @@ radar_dome 処理（センサー除外）
   旋回軸 (Blender世界座標): (-89.13, -51.12, 50.99) LDU
   オフセット: (89.13, 51.12, -50.99) LDU
   Saved: /Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes/radar_dome.stl
-  頂点数: 71060  三角面数: 66408
+  頂点数: 85032  三角面数: 81048
   MuJoCo Z底面: -0.0147 m  Z上面: 0.0530 m
   half_Z: 0.0339 m
 
@@ -221,7 +229,7 @@ sonar_sensor 処理
   旋回軸 (Blender世界座標): (-91.69, -27.95, 107.62) LDU
   オフセット: (91.69, 27.95, -107.62) LDU
   Saved: /Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes/sonar_sensor.stl
-  頂点数: 14568  三角面数: 12608
+  頂点数: 15804  三角面数: 13504
   MuJoCo Z底面: -0.0298 m  Z上面: 0.0064 m
   half_Z: 0.0181 m
   Z軸回転: 180.0°
@@ -236,7 +244,7 @@ color_sensor 処理
   旋回軸 (Blender世界座標): (-81.04, -149.48, 147.62) LDU
   オフセット: (81.04, 149.48, -147.62) LDU
   Saved: /Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes/color_sensor.stl
-  頂点数: 6817  三角面数: 6296
+  頂点数: 7022  三角面数: 6496
   MuJoCo Z底面: -0.0126 m  Z上面: 0.0126 m
   half_Z: 0.0126 m
 
@@ -253,7 +261,7 @@ obstacle_wall_a 処理
     X[-169.9, -10.1]  Y[192.2, 259.9]  Z[-24.7, 166.1] LDU
   オフセット: (90.00, -226.04, 24.65) LDU
   Saved: /Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes/obstacle_wall_a.stl
-  頂点数: 13064  三角面数: 12496
+  頂点数: 14796  三角面数: 14376
   MuJoCo Z底面: -0.0135 m  Z上面: 0.0135 m
   half_Z: 0.0135 m
 
@@ -265,7 +273,7 @@ obstacle_wall_b 処理
     X[20.1, 79.9]  Y[320.1, 339.9]  Z[-24.9, 234.9] LDU
   オフセット: (-50.00, -330.00, 24.90) LDU
   Saved: /Users/kuboaki/Projects/sonar_radar/mujoco_model/meshes/obstacle_wall_b.stl
-  頂点数: 17626  三角面数: 17052
+  頂点数: 18418  三角面数: 17836
   MuJoCo Z底面: -0.0040 m  Z上面: 0.0040 m
   half_Z: 0.0040 m
 

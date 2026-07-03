@@ -76,6 +76,24 @@ The Control tab in the viewer lets you move the obstacle wall (`wall_x_ctrl`,
 [mujoco_model/studio_to_mujoco.md](mujoco_model/studio_to_mujoco.md) for how
 the MuJoCo model itself is built from the Bricklink Studio design.
 
+#### Non-interactive run (automatic button injection)
+
+Use `--auto-start` / `--auto-stop` to run the full scan without pressing the
+physical force sensor — useful for CI and scripted testing:
+
+```bash
+# start 0.5 s after calibration, stop 3 s after start
+python3 sim/sonar_radar_sim.py --auto-start 0.5 --auto-stop 3
+
+# accelerated: 200× real-time for quick smoke tests
+SPIKEHAT_SIM_SPEED_SCALE=200 python3 sim/sonar_radar_sim.py --auto-start 0.5 --auto-stop 3
+```
+
+| Option | Description |
+|--------|-------------|
+| `--auto-start SEC` | Inject start button SEC seconds after calibration completes |
+| `--auto-stop SEC`  | Inject stop button SEC seconds after scan start |
+
 ![シミュレーション実行中](docs/sonar_radar_sim_snap.png)
 
 *シミュレーション実行中*

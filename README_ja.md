@@ -102,6 +102,24 @@ uv run mjpython sim/sonar_radar_sim.py --viewer  # 3Dビューア付き・実時
 MuJoCoモデル自体の作成手順（Bricklink Studio設計からの変換）については
 [mujoco_model/studio_to_mujoco.md](mujoco_model/studio_to_mujoco.md) を参照してください。
 
+#### 非インタラクティブ実行（ボタン自動注入）
+
+`--auto-start` / `--auto-stop` オプションを使うと、フォースセンサーを物理的に
+押さずにスキャンを自動実行できます。CI や動作確認スクリプトでの利用を想定しています。
+
+```bash
+# キャリブレーション後 0.5秒でスタート、スタートから 3秒後にストップ
+python3 sim/sonar_radar_sim.py --auto-start 0.5 --auto-stop 3
+
+# 高速シミュレーション（実時間の200倍）で素早く動作確認
+SPIKEHAT_SIM_SPEED_SCALE=200 python3 sim/sonar_radar_sim.py --auto-start 0.5 --auto-stop 3
+```
+
+| オプション | 意味 |
+|------------|------|
+| `--auto-start SEC` | キャリブレーション完了後 SEC 秒でスキャン開始ボタンを自動注入 |
+| `--auto-stop SEC` | スキャン開始から SEC 秒後にスキャン停止ボタンを自動注入 |
+
 ![シミュレーション実行中](docs/sonar_radar_sim_snap.png)
 
 *シミュレーション実行中*

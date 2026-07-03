@@ -89,6 +89,12 @@ def _inject_spikehat(xml_path, speed_scale, hat_holder=None):
             if hat_holder is not None:
                 hat_holder.append(self)
 
+        def force_is_pressed(self, port):
+            if hat_holder is not None and _force_override[0] > 0:
+                _force_override[0] -= 1
+                return True
+            return super().force_is_pressed(port)
+
         def close(self):
             # ビューアモードでは、sonar_radar.py の with ブロックを抜けた後も
             # _viewer_loop（別スレッド）が同じ実体(mjModel/mjData/sim構造体)を
@@ -214,11 +220,16 @@ else:
         _selected_wall = [0]
 
         # スペースキーによる starter パルス制御
-        # 残りフレーム数 > 0 の間は press_ctrl を PRESS_FORCE に保持し、
-        # 0 になったら自動的に 0 に戻す（押して離すを自動再現）
-        _PRESS_FORCE  = 3.0   # 押下時の力 [N]（閾値 0.5N を超えれば十分）
-        _PRESS_FRAMES = 30    # 押下を維持するフレーム数（≈ 30ms 程度）
-        _press_pulse  = [0]   # 残りフレーム数
+        # force_is_pressed を直接オーバーライドして押下→離す を再現する。
+        # _force_override > 0: True を返す(押下中), 0: 通常の物理ベース判定
+        # MIN_PRESS_S(0.1s) を超えるよう、force_is_pressed を 10回以上 True にする
+        # （polling 周期 20ms × 10 = 200ms）
+        _PRESS_CALLS  = 10    # True を返す force_is_pressed 呼び出し回数
+        _force_override = [0]  # 残り True 返却回数
+        # 物理アクチュエーターへのパルスも維持（視覚確認用）
+        _PRESS_FORCE  = 3.0
+        _PRESS_FRAMES = int(0.15 / _mdl.opt.timestep)
+        _press_pulse  = [0]
 
         def _key_callback(keycode):
             """
@@ -230,7 +241,8 @@ else:
               矢印キー ↑ ↓ : 選択中の壁 Y方向（↑=壁方向、↓=退避方向）
             """
             if keycode == ord(' '):
-                _press_pulse[0] = _PRESS_FRAMES
+                _press_pulse[0]   = _PRESS_FRAMES
+                _force_override[0] = _PRESS_CALLS
                 print("[sim] starter: 押下パルス送信", file=sys.stderr)
                 return
             s = _WALL_STUD

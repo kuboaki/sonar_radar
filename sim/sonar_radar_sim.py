@@ -44,6 +44,10 @@ import argparse
 _sim_parser = argparse.ArgumentParser(add_help=False)
 _sim_parser.add_argument("--viewer", action="store_true")
 _sim_parser.add_argument("--speed", type=float, default=1.0, metavar="N")
+_sim_parser.add_argument("--auto-start", type=float, default=None, metavar="SEC",
+                         help="キャリブレーション後 SEC 秒でスキャン開始ボタンを自動注入")
+_sim_parser.add_argument("--auto-stop", type=float, default=None, metavar="SEC",
+                         help="スキャン開始から SEC 秒後に停止ボタンを自動注入")
 _sim_args, _remaining = _sim_parser.parse_known_args()
 sys.argv = [sys.argv[0]] + _remaining
 
@@ -64,6 +68,17 @@ sys.path.insert(0, _lib_sim_dir)
 # ------------------------------------------------------------------ #
 # spikehat モジュールの差し込み
 # ------------------------------------------------------------------ #
+
+import time as _time_mod
+
+# --auto-start / --auto-stop 用の自動注入スケジュール（wall-clock 秒）
+# _auto_press_schedule[i] : 注入する壁時計時刻（None = 注入しない）
+# _auto_press_end[i]      : 「押している」期間の終了時刻（None = 押していない）
+# i=0: スタートボタン、i=1: ストップボタン
+_auto_press_schedule = [None, None]
+_auto_press_end      = [None, None]
+_AUTO_PRESS_DURATION = 0.15  # 押下を維持する wall-clock 秒（MIN_PRESS_S=0.1s を超える値）
+
 
 def _inject_spikehat(xml_path, speed_scale, hat_holder=None):
     """
@@ -90,9 +105,28 @@ def _inject_spikehat(xml_path, speed_scale, hat_holder=None):
                 hat_holder.append(self)
 
         def force_is_pressed(self, port):
+            # ビューアモードのスペースキー override
             if hat_holder is not None and _force_override[0] > 0:
                 _force_override[0] -= 1
                 return True
+            # --auto-start / --auto-stop による自動注入（wall-clock duration ベース）
+            now = _time_mod.monotonic()
+            for idx in (0, 1):
+                if (_auto_press_schedule[idx] is not None
+                        and now >= _auto_press_schedule[idx]
+                        and _auto_press_end[idx] is None):
+                    _auto_press_schedule[idx] = None  # 二度目は来ない
+                    _auto_press_end[idx] = now + _AUTO_PRESS_DURATION
+                    label = "スタート" if idx == 0 else "ストップ"
+                    print(f"[sim] auto-press: {label}ボタン自動注入 ({_AUTO_PRESS_DURATION*1000:.0f}ms)",
+                          file=sys.stderr)
+            # アクティブな押下ウィンドウ内なら True を返す
+            for idx in (0, 1):
+                if _auto_press_end[idx] is not None:
+                    if now < _auto_press_end[idx]:
+                        return True
+                    else:
+                        _auto_press_end[idx] = None  # 押下期間終了
             return super().force_is_pressed(port)
 
         def close(self):
@@ -133,6 +167,15 @@ def _run_radar():
 # ================================================================== #
 
 if not _sim_args.viewer:
+    _t0 = _time_mod.monotonic()
+    if _sim_args.auto_start is not None:
+        _auto_press_schedule[0] = _t0 + _sim_args.auto_start
+        print(f"[sim] auto-start: {_sim_args.auto_start:.1f}s 後にスタートボタンを注入", file=sys.stderr)
+    if _sim_args.auto_stop is not None:
+        # auto-stop は auto-start 基点（なければ t0 基点）から計算
+        _base = _sim_args.auto_start if _sim_args.auto_start is not None else 0.0
+        _auto_press_schedule[1] = _t0 + _base + _sim_args.auto_stop
+        print(f"[sim] auto-stop: {_base + _sim_args.auto_stop:.1f}s 後にストップボタンを注入", file=sys.stderr)
     _inject_spikehat(_xml_path, _sim_args.speed)
     _run_radar()
 

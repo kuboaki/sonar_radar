@@ -595,3 +595,28 @@ Studioモデルを変更した場合、変更の種類によって必要な作�
 3. `sim/sonar_radar_sim.py` の `_viewer_loop` に新しいjoint/actuatorの
    id取得とqpos反映処理を追加（§9.2〜9.3参照）
 4. 新センサーを `raspi/sonar_radar.py` から使う場合はアプリコードも更新
+
+---
+
+## 12. 変更履歴
+
+### v0.10.0（2026-07-04）
+
+**全センサーを libspikehat_sim の include コンポーネントに移行**
+
+- 距離センサー・カラーセンサー・フォースセンサーの3つすべてを
+  `libspikehat_sim/examples/components/` の `<include>` として組み込む方式に統一。
+  各センサーの geom・joint・site は `sonar_radar.xml` のインライン定義から分離された。
+- `blender_export.py` に `starter`（フォースセンサーユニット）の
+  `sensor_mount` pos を自動計算するセクションを追加。
+- カラーセンサーの `SENSOR_HOME_OFFSET` 符号修正（+5° → −5°）、
+  `euler="-90 -185 0"` に更新。
+- `button.stl` を `force_sensor_button.stl` にリネーム。
+- `libspikehat_sim` の `force_sensor.io` の原点を
+  センサー本体底面中心（LDraw 原点）に合わせた
+  （`shared_offset=(0,0,0)` を確認済み）。
+- `sonar_radar09.blend` を最新の Studio モデルから再生成。
+
+### v0.9.0（2026-06-29）
+
+**Hakoniwa asset 化・libspikehat_pdu 作成・結合テスト完了**

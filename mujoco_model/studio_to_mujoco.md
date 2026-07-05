@@ -600,6 +600,14 @@ Studioモデルを変更した場合、変更の種類によって必要な作�
 
 ## 12. 変更履歴
 
+### v0.10.1（2026-07-05）
+
+**ドキュメント画像を更新**
+
+- `docs/sonar_radar_overview.png` を追加（`.jpg` から `.png` に変更）。
+- `docs/sonar_radar_sim_snap.png` を更新（starter/フォースセンサーを含む最新外観）。
+- `README.md` / `README_ja.md` の画像参照を `.jpg` から `.png` に変更。
+
 ### v0.10.0（2026-07-04）
 
 **全センサーを libspikehat_sim の include コンポーネントに移行**

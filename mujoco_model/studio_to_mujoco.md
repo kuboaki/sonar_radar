@@ -528,6 +528,66 @@ mjpython sonar_radar_sim.py --viewer       # ビューア付き（推奨、実�
 `SPIKEHAT_SIM_XML` 環境変数でXMLパスを上書きできる（デフォルトは
 `mujoco_model/sonar_radar.xml`）。
 
+### 10.4 libspikehat_sim コンポーネントの include と可動部アタッチメント
+
+#### MuJoCo `<include>` の制約
+
+MuJoCo の `<include>` はXMLを**そのまま埋め込む**仕組みであり、
+Unreal Engine や Unity のようなコンポーネントシステムとは異なる。
+include 内で定義されたボディに、include を利用する側から**子ボディを追加することはできない**。
+
+```xml
+<body name="sensor_mount">
+  <include file=".../force_sensor_body.xml"/>
+  <!-- force_sensor_body.xml の中にある button body に、
+       ここから子ボディを追加することはできない -->
+</body>
+```
+
+#### include に適したコンポーネント
+
+外部パーツが可動部に接続**しない**センサー類は include に適している。
+
+| コンポーネント | include 適合 | 理由 |
+|---|:---:|---|
+| `distance_sensor_body.xml` | ✓ | ドームに取り付くだけ（可動部への接続なし） |
+| `color_sensor_body.xml` | ✓ | 同上 |
+| `force_sensor_body.xml` | △ | button body に press_block が接続する |
+
+#### 可動部に外部パーツを接続する場合
+
+press_block（シャフトを含む）のように、コンポーネント内の可動ボディに**剛体結合**する
+外部パーツは、MuJoCo の `weld` equality + tight solref で近似する。
+
+```xml
+<!-- press_block を button に剛体結合（include の制約によりボディ階層での表現不可） -->
+<equality>
+  <weld body1="press_block" body2="button" solref="0.001 1"/>
+</equality>
+```
+
+- `solref="0.001 1"` はデフォルト (`0.02 1`) より大幅に拘束を強め、残差を最小化する。
+- 完全剛体ではないため、高速・高荷重の用途には注意が必要。
+
+#### インライン展開による回避
+
+どうしても親子階層で剛体結合する必要がある場合は、
+include を使わず force_sensor_body.xml の内容を利用側XMLにインライン展開し、
+press_block を button ボディの子として直接定義する。
+
+```xml
+<body name="button" pos="0 0 0">
+  <joint name="button_slide" .../>
+  <geom name="button_geom" .../>
+  <body name="press_block" pos="...">   <!-- シャフトごと button の子として定義 -->
+    <inertial .../>
+    <geom name="press_geom" .../>
+  </body>
+</body>
+```
+
+この場合、force_sensor_body.xml の更新を手動でインライン版に反映する必要がある。
+
 ---
 
 ## 11. Studioモデルを変更したときの影響範囲

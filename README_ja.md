@@ -8,7 +8,7 @@ LEGO SPIKE Prime + Raspberry Pi Build HAT を使った2Dレーダースキャナ
 MuJoCoシミュレーション（`sim/sonar_radar_sim.py` + `libspikehat_sim`）で
 動作確認・調整を行ったコードを、そのまま実機（Raspberry Pi + libspikehat）で動かせます。
 
-![sonar_radar overview](docs/sonar_radar_overview.jpg)
+![sonar_radar overview](docs/sonar_radar_overview.png)
 
 [English README](README.md)
 

@@ -7,7 +7,7 @@ This project is developed as a **digital twin**: the same application code
 simulation (`sim/sonar_radar_sim.py` + `libspikehat_sim`), so new behavior
 can be developed and tuned in simulation before running it on the real robot.
 
-![sonar_radar overview](docs/sonar_radar_overview.jpg)
+![sonar_radar overview](docs/sonar_radar_overview.png)
 
 [日本語版 README](README_ja.md)
 

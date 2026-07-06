@@ -33,7 +33,8 @@ START_TIME = time.monotonic()
 try:
     from spikehat import SpikeHat, DEVICE_MOTOR_L, DEVICE_FORCE, DEVICE_COLOR, DEVICE_DISTANCE
 except ImportError:
-    sys.path.insert(0, '/home/kuboaki/projects/libspikehat/python')
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libspikehat', 'python'))
     from spikehat import SpikeHat, DEVICE_MOTOR_L, DEVICE_FORCE, DEVICE_COLOR, DEVICE_DISTANCE
 
 # --- ハードウェア設定 ---

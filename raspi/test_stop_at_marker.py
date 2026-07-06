@@ -11,8 +11,9 @@ test_stop_at_marker.py - マーカーで停止するテストスクリプト
 """
 
 import sys
+import os
 import argparse
-sys.path.insert(0, '/home/kuboaki/projects/libspikehat/python')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'libspikehat', 'python'))
 
 from spikehat import SpikeHat, DEVICE_MOTOR_L, DEVICE_COLOR
 

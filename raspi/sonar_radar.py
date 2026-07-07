@@ -118,15 +118,14 @@ class SonarRadarSM:
     """
 
     def __init__(self, clock=None):
-        self._clock         = clock if clock is not None else time.monotonic
-        self.state          = State.INIT
-        self.results        = []
-        self._zero_pos      = 0
-        self._force_on      = False
-        self._press_ticks   = 0
-        self._scan_pwm      = SCAN_PWM
-        self._on_marker     = False
-        self._scan_force_on = False
+        self._clock       = clock if clock is not None else time.monotonic
+        self.state        = State.INIT
+        self.results      = []
+        self._zero_pos    = 0
+        self._force_on    = False  # クリック検出用（共通）
+        self._press_ticks = 0      # クリック検出用（共通）
+        self._scan_pwm    = SCAN_PWM
+        self._on_marker   = False
 
     def tick(self, hat):
         if   self.state == State.INIT:             self._tick_init(hat)
@@ -174,30 +173,17 @@ class SonarRadarSM:
             self.state = State.WAIT_FOR_START
 
     # ── WAIT_FOR_START ────────────────────────────────────────────────────────
-    # 待つもの: フォースセンサーの押下→解放（MIN_PRESS_TICKS 以上の押下）
+    # 待つもの: フォースセンサーのクリック（押下→解放）
 
     def _tick_wait_for_start(self, hat):
-        try:
-            pressed = hat.force_is_pressed(PORT_FORCE)
-        except RuntimeError:
-            return
-        if pressed and not self._force_on:
-            self._force_on    = True
-            self._press_ticks = 1
-        elif pressed and self._force_on:
-            self._press_ticks += 1
-        elif not pressed and self._force_on:
-            if self._press_ticks >= MIN_PRESS_TICKS:
-                print("スキャン開始", file=sys.stderr)
-                self._scan_pwm      = SCAN_PWM
-                self._on_marker     = False
-                self._scan_force_on = False
-                hat.motor_pwm(PORT_MOTOR, self._scan_pwm)
-                print(f"連続スキャン開始: 速度(PWM)={self._scan_pwm}, "
-                      f"間隔={SAMPLE_INTERVAL_S*1000:.0f}ms", file=sys.stderr)
-                self.state = State.SCANNING
-            self._force_on    = False
-            self._press_ticks = 0
+        if self._detect_force_click(hat):
+            print("スキャン開始", file=sys.stderr)
+            self._scan_pwm  = SCAN_PWM
+            self._on_marker = False
+            hat.motor_pwm(PORT_MOTOR, self._scan_pwm)
+            print(f"連続スキャン開始: 速度(PWM)={self._scan_pwm}, "
+                  f"間隔={SAMPLE_INTERVAL_S*1000:.0f}ms", file=sys.stderr)
+            self.state = State.SCANNING
 
     # ── SCANNING ──────────────────────────────────────────────────────────────
     # 待つもの: フォースセンサーの押下→解放
@@ -236,17 +222,12 @@ class SonarRadarSM:
         print(f"[{self._clock():6.2f}s] motor:{angle_str}° dome:{dome_str}° -> {label}",
               file=sys.stderr)
 
-        # フォースセンサー「押して離す」でスキャン終了
-        try:
-            pressed = hat.force_is_pressed(PORT_FORCE)
-            if self._scan_force_on and not pressed:
-                print("フォースセンサー: スキャン終了", file=sys.stderr)
-                hat.motor_stop(PORT_MOTOR)
-                print(f"0位置へ復帰: zero_pos={self._zero_pos}", file=sys.stderr)
-                self.state = State.RETURN_TO_ORIGIN
-            self._scan_force_on = pressed
-        except RuntimeError:
-            pass
+        # フォースセンサーのクリックでスキャン終了
+        if self._detect_force_click(hat):
+            print("フォースセンサー: スキャン終了", file=sys.stderr)
+            hat.motor_stop(PORT_MOTOR)
+            print(f"0位置へ復帰: zero_pos={self._zero_pos}", file=sys.stderr)
+            self.state = State.RETURN_TO_ORIGIN
 
     # ── RETURN_TO_ORIGIN ──────────────────────────────────────────────────────
     # 待つもの: モーターがzero_posに到達
@@ -257,6 +238,26 @@ class SonarRadarSM:
             self.state = State.TERMINATED
 
     # ── 内部ヘルパー ──────────────────────────────────────────────────────────
+
+    def _detect_force_click(self, hat) -> bool:
+        """フォースセンサーのクリック（押下→解放）を検出する。毎ティック呼ぶこと。
+        MIN_PRESS_TICKS 以上の押下の後に解放されたとき True を返す。"""
+        try:
+            pressed = hat.force_is_pressed(PORT_FORCE)
+        except RuntimeError:
+            return False
+        if pressed and not self._force_on:
+            self._force_on    = True
+            self._press_ticks = 1
+        elif pressed and self._force_on:
+            self._press_ticks += 1
+        elif not pressed and self._force_on:
+            self._force_on = False
+            if self._press_ticks >= MIN_PRESS_TICKS:
+                self._press_ticks = 0
+                return True
+            self._press_ticks = 0
+        return False
 
     def _drive_to(self, hat, target: int, speed: int) -> bool:
         """目標角度に向けて1ティック分トルクを適用する。到達したら True を返す。"""

@@ -3,10 +3,14 @@
 LEGO SPIKE Prime + Raspberry Pi Build HAT を使った2Dレーダースキャナー。
 [libspikehat](https://github.com/kuboaki/libspikehat) 経由でデバイスを制御します。
 
-本プロジェクトは**デジタルツイン**として開発しています。実機・シミュレーションの
-どちらでも同じアプリケーションコード（`raspi/sonar_radar.py`)が動作し、
-MuJoCoシミュレーション（`sim/sonar_radar_sim.py` + `libspikehat_sim`）で
-動作確認・調整を行ったコードを、そのまま実機（Raspberry Pi + libspikehat）で動かせます。
+本プロジェクトは**デジタルツイン**として開発しています。
+アプリケーションコード（`raspi/sonar_radar.py`）を3つの環境で共用します。
+
+| 環境 | ライブラリ | エントリポイント |
+|------|-----------|----------------|
+| 実機（Raspberry Pi） | `libspikehat` | `raspi/sonar_radar.py` の `main()` |
+| スタンドアロンSIM（MuJoCo） | `libspikehat_sim` | `sim/sonar_radar_sim.py` |
+| Hakoniwa SIM | `libspikehat_hako` | `sim/sonar_radar_hako.py` + `sim/sonar_radar_ctrl_hako.py` |
 
 ![sonar_radar overview](docs/sonar_radar_overview.png)
 
@@ -17,7 +21,7 @@ MuJoCoシミュレーション（`sim/sonar_radar_sim.py` + `libspikehat_sim`）
 | ポート | デバイス | 役割 |
 |--------|---------|------|
 | A (0) | SPIKE Prime Lアンギュラーモーター | ドーム旋回（ギア減速1:3、回転方向反転） |
-| B (1) | SPIKE Prime フォースセンサー | スキャン終了スイッチ |
+| B (1) | SPIKE Prime フォースセンサー | スタート/ストップスイッチ |
 | C (2) | SPIKE Prime カラーセンサー | 旋回端マーカー検出（赤=左端, 青=右端） |
 | D (3) | SPIKE Prime 距離センサー | 障害物計測 |
 
@@ -26,8 +30,7 @@ MuJoCoシミュレーション（`sim/sonar_radar_sim.py` + `libspikehat_sim`）
 - **赤マーカー** — 左端（負方向）
 - **青マーカー** — 右端（正方向）
 
-ドームは赤・青マーカーを検出するたびに旋回方向を反転しながら往復スキャンを行い、
-フォースセンサー（終了スイッチ）が押されると停止します。
+ドームは赤・青マーカーを検出するたびに旋回方向を反転しながら往復スキャンを行います。
 
 ## スキャン仕様
 
@@ -36,6 +39,30 @@ MuJoCoシミュレーション（`sim/sonar_radar_sim.py` + `libspikehat_sim`）
 | サンプリング間隔 | 50 ms |
 | 有効距離 | 50〜300 mm |
 | 原点（0°） | 正面中央（起動時にキャリブレーション） |
+
+## アーキテクチャ：開いたループ（ステートマシン）
+
+`sonar_radar.py` は `SonarRadarSM` クラスとして実装されています。
+`tick(hat)` を呼ぶたびに1ステップだけ処理してすぐリターンする「開いたループ」構造です。
+外側ループ（system_driver）が `hat.sleep()` で時間を進める責任を持ちます。
+
+```
+# どの環境でも同じパターン
+sm = SonarRadarSM(clock=...)
+while not sm.is_terminated():
+    sm.tick(hat)          # 1ステップ処理してリターン
+    hat.sleep(INTERVAL)   # 環境によって内部実装が異なる
+                          #   実機:      hat.sleep() → time.sleep()
+                          #   スタンドアロンSIM: hat.sleep() → MuJoCoステップ
+                          #   Hakoniwa:  hat.sleep() → hakopy.usleep()
+```
+
+### ステートマシン状態遷移
+
+![ステートマシン図](docs/state_machine.svg)
+
+各状態は「1つの待つできごと」を持つフラットな1段のステートマシンです。
+フラグ変数は状態として明示化されています。
 
 ## 実機での実行
 
@@ -52,7 +79,7 @@ bash run.sh
 `run.sh` は Build HAT ファームウェアをロードしてから `sonar_radar.py` を実行します。
 `sonar_radar.py` を直接呼び出さず、必ず `run.sh` 経由で実行してください。
 
-## シミュレーションでの実行（MuJoCo）
+## スタンドアロンSIMでの実行（MuJoCo）
 
 ### セットアップ（初回のみ）
 
@@ -73,9 +100,7 @@ uv pip install mujoco==3.10.0
 
 > **注意**: mujoco の pip パッケージのバージョンと MuJoCo.app（`/Applications/MuJoCo.app`）の
 > バージョンを必ず一致させてください。バージョンが異なると `libspikehat_sim` が
-> `mj_ray` 内でクラッシュします（`mjModel` 構造体レイアウトの ABI 非互換）。
-> MuJoCo.app を更新した場合は `mujoco` pip パッケージも同じバージョンに合わせ、
-> `sim/libspikehat_sim/build` を再ビルドしてください。
+> クラッシュします（`mjModel` 構造体レイアウトの ABI 非互換）。
 
 **2. libspikehat_simのビルド**
 
@@ -92,37 +117,106 @@ uv run python3 sim/sonar_radar_sim.py            # バッチ実行（結果のJS
 uv run mjpython sim/sonar_radar_sim.py --viewer  # 3Dビューア付き・実時間
 ```
 
-`sonar_radar_sim.py` は、MuJoCoで動作するシミュレーション版 `spikehat` モジュールを
-差し込んだ上で `raspi/sonar_radar.py` をそのまま実行します。`sonar_radar.py` への
-変更はそのままシミュレーションに反映されます。シミュレーションは常に実時間
-（`--speed 1.0` 固定）で実行されるため、実機の動作と直接比較できます。
+ビューア起動時のキー操作：
 
-ビューアのControlタブから、障害物の壁（`wall_x_ctrl`/`wall_y_ctrl`）を動かしたり、
-終了スイッチ（`press_ctrl`）を押したりして対話的に動作確認ができます。
-MuJoCoモデル自体の作成手順（Bricklink Studio設計からの変換）については
-[mujoco_model/studio_to_mujoco.md](mujoco_model/studio_to_mujoco.md) を参照してください。
+| キー | 操作 |
+|------|------|
+| Space | スタート/ストップボタンを押す |
+| 1 | 黄色壁（wall_a）を選択 |
+| 2 | 黒壁（wall_b）を選択 |
+| ←→ | 選択中の壁をX方向に移動 |
+| ↑↓ | 選択中の壁をY方向に移動 |
+
+![スタンドアロンSIM スナップショット](docs/sonar_radar_sim_snap.png)
 
 #### 非インタラクティブ実行（ボタン自動注入）
 
-`--auto-start` / `--auto-stop` オプションを使うと、フォースセンサーを物理的に
-押さずにスキャンを自動実行できます。CI や動作確認スクリプトでの利用を想定しています。
+```bash
+# キャリブレーション後 3秒でスタート、スタートから 20秒後にストップ
+python3 sim/sonar_radar_sim.py --auto-start 3 --auto-stop 20
+```
+
+## Hakoniwa SIMでの実行
+
+Hakoniwa は複数のシミュレーターを統一された時刻で協調動作させるフレームワークです。
+物理シミュレーション（plant）と制御ロジック（controller）を独立したアセットとして実行し、
+PDU（Protocol Data Unit）を経由してセンサー値・制御指令を交換します。
+
+### アーキテクチャ
+
+```
+Asset 1（物理: sonar_radar_hako.py）
+  MuJoCo物理シミュレーション
+  └─ センサー読み取り → PDU（CH0:Range, CH1:ColorRGBA, CH3:motor_angle, CH4:force_sensor）
+  └─ PDU（CH2:turret_torque） → モーター制御
+  └─ qpos → /tmp/sonar_radar_qpos.bin → viewer（表示のみ）
+
+Asset 2（制御: sonar_radar_ctrl_hako.py）
+  libspikehat_hako（HakoSpikeHat）
+  └─ PDU読み取り → SonarRadarSM.tick() → PDU書き込み
+  └─ hat.sleep() = hakopy.usleep()（シミュレーション時刻で待機）
+```
+
+Hakoniwa の時刻同期設計により、コントローラーの `hat.sleep()` が
+`hakopy.usleep()` を呼ぶことでシミュレーション時刻ベースのタイミングが実現します。
+コンダクターの実行速度に依存しない正確な時刻同期が可能です。
+
+### セットアップ
+
+**前提**
+- [hakoniwa-mujoco-robots](https://github.com/toppers/hakoniwa-mujoco-robots) がセットアップ済み
+- `hakopy` が Python 3.14（Homebrew）で利用可能（`run-hakopy.bash` 経由で実行）
+
+sonar_radar の設定ファイルを hakoniwa-mujoco-robots へリンクします：
 
 ```bash
-# キャリブレーション後 0.5秒でスタート、スタートから 3秒後にストップ
-python3 sim/sonar_radar_sim.py --auto-start 0.5 --auto-stop 3
+cd ~/Projects/hakoniwa-mujoco-robots/config
+ln -s ~/Projects/sonar_radar/sim/sonar-radar-pdudef-compact.json .
+ln -s ~/Projects/sonar_radar/sim/sonar-radar-pdutypes.json .
+```
 
-# 高速シミュレーション（実時間の200倍）で素早く動作確認
-SPIKEHAT_SIM_SPEED_SCALE=200 python3 sim/sonar_radar_sim.py --auto-start 0.5 --auto-stop 3
+### 実行
+
+**起動順序を必ず守ってください**（plant → controller → hako-cmd start）。
+
+```bash
+# ターミナル 1: plant（conductor も内包）
+cd ~/Projects/hakoniwa-mujoco-robots
+bash run-hakopy.bash ~/Projects/sonar_radar/sim/sonar_radar_hako.py --viewer
+
+# ターミナル 2: controller
+bash run-hakopy.bash ~/Projects/sonar_radar/sim/sonar_radar_ctrl_hako.py
+
+# ターミナル 3: シミュレーション開始
+hako-cmd start
+```
+
+viewer 起動時のキー操作：
+
+| キー | 操作 |
+|------|------|
+| Space | スタート/ストップボタンを押す（plant へファイル経由で通知） |
+
+> **注意**: ビューアーはHakoniwaアーキテクチャの外側にある可視化専用プロセスです。
+> MuJoCo物理状態（qpos）をファイル経由で受け取り表示するだけで、
+> PDU・zenohとは無関係です。SpaceキーもファイルIPCで plant に通知します。
+
+#### 自動注入モード
+
+```bash
+bash run-hakopy.bash ~/Projects/sonar_radar/sim/sonar_radar_ctrl_hako.py \
+  --auto-start 3 --auto-stop 20
 ```
 
 | オプション | 意味 |
 |------------|------|
-| `--auto-start SEC` | キャリブレーション完了後 SEC 秒でスキャン開始ボタンを自動注入 |
-| `--auto-stop SEC` | スキャン開始から SEC 秒後にスキャン停止ボタンを自動注入 |
+| `--auto-start SEC` | シミュレーション開始から SEC 秒後にスタートボタンを自動注入 |
+| `--auto-stop SEC` | スタートボタン注入から SEC 秒後にストップボタンを自動注入 |
+| （省略時） | 物理ボタン操作（Space キー）を待つ |
 
-![シミュレーション実行中](docs/sonar_radar_sim_snap.png)
-
-*シミュレーション実行中*
+> **注意**: Hakoniwa のコンダクターはデフォルトでリアルタイムペーシングを行いません。
+> シミュレーション時刻は壁時計より速く進むため、ドームの旋回がスタンドアロンSIMより
+> 速く見えます。これは仕様です（コンダクターAPIにペーシング設定がないため）。
 
 ## 出力形式
 
@@ -155,13 +249,9 @@ python3 raspi/sonar_plot.py scan.json -o scan_result.png --title "scan result"
 |---|---|
 | ![実機スキャン例](docs/scan_real_example.png) | ![SIMスキャン例](docs/scan_sim_example.png) |
 
-実機の超音波距離センサーは指向性が広いため、壁を広い角度範囲（この例では約-45°〜+35°）
-で検出しています。一方、SIM側の距離センサーは単一レイキャストのため、正面付近の
-狭い角度範囲（この例では約-21°〜+1°）でしか壁を検出しません。この距離センサーのFOV
-（指向性）の乖離は、現時点では未解消の既知の差異です（[mujoco_model/studio_to_mujoco.md](mujoco_model/studio_to_mujoco.md)参照）。
-
-実機・SIMのスキャンデータ取得とプロット作成の手順は
-[docs/visualization.md](docs/visualization.md) を参照してください。
+実機の超音波距離センサーは指向性が広いため、壁を広い角度範囲で検出します。
+SIM側の距離センサーは単一レイキャストのため、正面付近の狭い角度範囲でしか壁を検出しません。
+この距離センサーのFOV乖離は現時点では未解消の既知の差異です。
 
 ## キャリブレーション
 
@@ -173,16 +263,23 @@ python3 raspi/sonar_plot.py scan.json -o scan_result.png --title "scan result"
 
 ```
 sonar_radar/
-├── raspi/                  実機用アプリケーション（Raspberry Pi上で実行）
-│   ├── sonar_radar.py    メインスキャナースクリプト（シミュレーションと共用）
-│   └── run.sh              起動スクリプト（ファームウェアロード＋スキャン実行）
-├── sim/                     MuJoCoシミュレーション
-│   ├── sonar_radar_sim.py  libspikehat_sim経由でsonar_radar.pyを実行するエントリポイント
-│   └── libspikehat_sim/    MuJoCoベースのシミュレーションライブラリ（libspikehat互換API）
-├── mujoco_model/            MuJoCoモデル（XML・メッシュ・Blenderエクスポートスクリプト）
-│   └── studio_to_mujoco.md  Bricklink Studio → MuJoCoモデル作成手順
-├── studio_model/            Bricklink Studioモデルファイル
-└── docs/                    ドキュメント用画像
+├── raspi/                         実機用アプリケーション
+│   ├── sonar_radar.py             SonarRadarSM（ステートマシン）+ 実機用main()
+│   ├── sonar_plot.py              スキャン結果の可視化
+│   ├── run.sh                     起動スクリプト
+│   └── libspikehat/               実機用ライブラリ（submodule）
+├── sim/                           シミュレーション
+│   ├── sonar_radar_sim.py         スタンドアロンSIMエントリポイント
+│   ├── sonar_radar_hako.py        Hakoniwa plant（Asset 1）
+│   ├── sonar_radar_ctrl_hako.py   Hakoniwa controller（Asset 2）
+│   ├── sonar_radar_viewer.py      Hakoniwa用ビューアープロセス
+│   ├── libspikehat_hako.py        Hakoniwa版 SpikeHat API（HakoSpikeHat）
+│   ├── libspikehat_sim/           MuJoCo版ライブラリ（submodule）
+│   └── *.json                     Hakoniwa PDU定義
+├── mujoco_model/                  MuJoCoモデル（XML・メッシュ）
+│   └── studio_to_mujoco.md        Bricklink Studio → MuJoCo変換手順
+├── studio_model/                  Bricklink Studioモデルファイル
+└── docs/                          ドキュメント用画像
 ```
 
 ## ライセンス

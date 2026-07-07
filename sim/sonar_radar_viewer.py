@@ -23,8 +23,9 @@ _xml_path = os.environ.get(
     "SPIKEHAT_SIM_XML",
     os.path.realpath(os.path.join(_here, "..", "mujoco_model", "sonar_radar.xml")))
 
-QPOS_FILE    = "/tmp/sonar_radar_qpos.bin"
-_IDLE_TIMEOUT = 5.0   # この秒数ファイル更新がなければ自動終了
+QPOS_FILE      = "/tmp/sonar_radar_qpos.bin"
+PRESS_REQ_FILE = "/tmp/sonar_radar_press_req"
+_IDLE_TIMEOUT  = 5.0   # この秒数ファイル更新がなければ自動終了
 
 mdl = mujoco.MjModel.from_xml_path(_xml_path)
 dat = mujoco.MjData(mdl)
@@ -38,7 +39,16 @@ last_update = time.monotonic()
 print(f"[viewer] モデル: {_xml_path}  nq={nq}", file=sys.stderr, flush=True)
 print(f"[viewer] qpos ファイル監視: {QPOS_FILE}", file=sys.stderr, flush=True)
 
-with mujoco.viewer.launch_passive(mdl, dat) as viewer:
+def _key_callback(keycode):
+    if keycode == ord(' '):
+        try:
+            with open(PRESS_REQ_FILE, "w") as f:
+                f.write("1")
+            print("[viewer] starter: 押下リクエスト送信", file=sys.stderr, flush=True)
+        except Exception as e:
+            print(f"[viewer] WARN: press req write failed: {e}", file=sys.stderr, flush=True)
+
+with mujoco.viewer.launch_passive(mdl, dat, key_callback=_key_callback) as viewer:
     viewer.cam.lookat[:] = mdl.stat.center
     viewer.cam.distance  = mdl.stat.extent * 1.8
     viewer.cam.azimuth   = 155.0

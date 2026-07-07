@@ -98,14 +98,19 @@ DIST_MAX_M       = 0.30
 # ─── 状態 ────────────────────────────────────────────────────────────────────
 
 _state = {
-    "hat":        None,
-    "debug":      False,
-    "step_count": 0,
-    "nq":         0,
+    "hat":          None,
+    "debug":        False,
+    "step_count":   0,
+    "nq":           0,
+    "press_remain": 0,    # press_ctrl を印加し続ける残りステップ数
+    "press_aid":    -1,   # press_ctrl アクチュエーター ID
 }
 
-_DEBUG_INTERVAL = 100
-_QPOS_FILE      = "/tmp/sonar_radar_qpos.bin"
+_DEBUG_INTERVAL  = 100
+_QPOS_FILE       = "/tmp/sonar_radar_qpos.bin"
+_PRESS_REQ_FILE  = "/tmp/sonar_radar_press_req"
+_PRESS_FORCE     = 3.0    # press_ctrl に印加する力 [N]
+_PRESS_FRAMES    = 150    # 印加するステップ数（1ms × 150 = 150ms）
 
 
 def _write_qpos(hat, nq: int):
@@ -148,6 +153,21 @@ def on_simulation_step(_ctx):
             hat.motor_pwm_no_step(PORT_MOTOR, max(-1.0, min(1.0, pwm)))
         except Exception:
             pass
+
+    # 1b. viewer からの press リクエストを検出して press_ctrl を印加
+    if _state["press_aid"] >= 0:
+        if os.path.exists(_PRESS_REQ_FILE):
+            try:
+                os.remove(_PRESS_REQ_FILE)
+            except OSError:
+                pass
+            _state["press_remain"] = _PRESS_FRAMES
+            print("[plant] starter: 押下パルス開始", file=sys.stderr, flush=True)
+        if _state["press_remain"] > 0:
+            hat.sim_set_ctrl(_state["press_aid"], _PRESS_FORCE)
+            _state["press_remain"] -= 1
+        else:
+            hat.sim_set_ctrl(_state["press_aid"], 0.0)
 
     # 2. MuJoCo を1ステップ進める（ペーシングはコントローラーの hakopy.usleep が担う）
     hat.sim_step_no_pace()
@@ -259,6 +279,15 @@ def main():
         hat.port_config(PORT_DISTANCE, DEVICE_DISTANCE)
         hat.port_config(PORT_FORCE,    DEVICE_FORCE)
         _state["hat"] = hat
+        # press_ctrl アクチュエーター ID を取得（なければ -1 のまま）
+        try:
+            import mujoco as _mj
+            _mdl_tmp = _mj.MjModel.from_xml_path(_xml_path)
+            _aid = _mj.mj_name2id(_mdl_tmp, _mj.mjtObj.mjOBJ_ACTUATOR, "press_ctrl")
+            _state["press_aid"] = _aid
+            print(f"[INFO] press_ctrl actuator id={_aid}", file=sys.stderr)
+        except Exception:
+            pass
         print(f"[INFO] SpikeHat initialized: {_xml_path}", file=sys.stderr)
     except Exception as e:
         print(f"[ERROR] SpikeHat init failed: {e}", file=sys.stderr)

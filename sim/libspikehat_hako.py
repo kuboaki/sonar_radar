@@ -13,6 +13,7 @@ sleep() は hakopy.usleep() を呼びシミュレーション時刻ベースで�
 
 import sys
 import math
+import time
 import hakopy
 
 from pdu.python.std_msgs.pdu_conv_Float64 import pdu_to_py_Float64, py_to_pdu_Float64
@@ -78,7 +79,8 @@ class HakoSpikeHat:
     # ── タイミング ──────────────────────────────────────────────────────────
 
     def sleep(self, seconds: float):
-        """シミュレーション時刻で seconds 秒待機する。"""
+        """シミュレーション時刻で seconds 秒待機し、さらに同時間だけリアル時刻でも待機する。
+        二重 sleep によりシミュレーション時刻を壁時計に追従させる（リアル時刻同期）。"""
         usec = int(max(0.0, seconds) * 1_000_000)
         if usec <= 0:
             return
@@ -86,6 +88,7 @@ class HakoSpikeHat:
         if not ok:
             raise HakoControllerStopped("hakopy.usleep returned false")
         self._sim_time_usec += usec
+        time.sleep(seconds)
 
     def schedule_auto_press(self, start_sec: float, stop_sec=None):
         """シミュレーション開始から start_sec 秒後にスタートボタン、

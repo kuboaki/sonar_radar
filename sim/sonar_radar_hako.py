@@ -68,12 +68,12 @@ from pdu.python.sensor_msgs.pdu_pytype_Range import Range
 ASSET_NAME   = "SonarRadarAsset"
 ROBOT_NAME   = "SonarRadarAsset"
 
-_hako_robots_dir = os.path.join(_here, "..", "..", "..", "..")
-PDU_DEF_PATH = os.path.join(_hako_robots_dir, "config", "sonar-radar-pdudef-compact.json")
-if not os.path.exists(PDU_DEF_PATH):
-    PDU_DEF_PATH = os.environ.get(
-        "SONAR_RADAR_PDU_DEF",
-        os.path.join(_here, "..", "..", "..", "..", "config", "sonar-radar-pdudef-compact.json"))
+_PDU_FILENAME = "sonar-radar-pdudef-compact.json"
+PDU_DEF_PATH = os.environ.get("SONAR_RADAR_PDU_DEF", "")
+if not PDU_DEF_PATH or not os.path.exists(PDU_DEF_PATH):
+    # カレントディレクトリ（run-hakopy.bash の実行場所 = hakoniwa-mujoco-robots/）を探す
+    _cwd_candidate = os.path.join(os.getcwd(), "config", _PDU_FILENAME)
+    PDU_DEF_PATH = _cwd_candidate
 
 PORT_MOTOR    = 0
 PORT_FORCE    = 1
@@ -149,8 +149,8 @@ def on_simulation_step(_ctx):
         except Exception:
             pass
 
-    # 2. MuJoCo を1ステップ進める（speed_scale=1.0 のペーシングで実時間に合わせる）
-    hat.sim_step()
+    # 2. MuJoCo を1ステップ進める（ペーシングはコントローラーの hakopy.usleep が担う）
+    hat.sim_step_no_pace()
     if _state["nq"] > 0:
         _write_qpos(hat, _state["nq"])
 

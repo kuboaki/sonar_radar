@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """
-sonar_radar_ctrl_hako.py — Hakoniwa controller として sonar_radar.py を実行する
+sonar_radar_ctrl_hako.py — Hakoniwa controller として SonarRadarSM を実行する
 
-libspikehat_hako.HakoSpikeHat を hat として差し込み、
-Hakoniwa の on_manual_timing_control コールバックで sonar_radar.py を直列実行する。
+SonarRadarSM（sonar_radar.py のステートマシン）に HakoSpikeHat を差し込み、
+on_manual_timing_control コールバック内で「開いたループ」を駆動する。
 
-on_manual_timing_control を使うことで、コントローラーのタイミングが
-シミュレーション時刻ベース（hakopy.usleep）になり、
+on_manual_timing_control の中で:
+  while not sm.is_terminated():
+      sm.tick(hat)        # 1ティック処理
+      hat.sleep(INTERVAL) # hakopy.usleep() でシミュレーション時刻を進める
+
+これにより、コントローラーのタイミングがシミュレーション時刻ベースになり、
 コンダクターの実行速度に依存しない正確な時刻同期が実現できる。
 
 PDU チャンネル（SonarRadarAsset）:
@@ -32,14 +36,13 @@ import sys
 import os
 import argparse
 import signal
-import importlib.util
 import types
 import subprocess
 
 # ─── パス設定 ────────────────────────────────────────────────────────────────
 
 _here        = os.path.dirname(os.path.abspath(__file__))
-_radar_file  = os.path.join(_here, "..", "raspi", "sonar_radar.py")
+_raspi_dir   = os.path.join(_here, "..", "raspi")
 _pdu_py_dir  = os.path.join(_here, "libspikehat_sim", "python")
 
 # libspikehat_hako.py（_here）と pdu Python バインディングをパスに追加
@@ -61,55 +64,36 @@ from libspikehat_hako import (
     DEVICE_MOTOR_L, DEVICE_COLOR, DEVICE_DISTANCE, DEVICE_FORCE,
 )
 
+# sonar_radar.py を import する前に spikehat スタブを差し込む
+# （sonar_radar.py のモジュールレベルで "from spikehat import ..." が実行されるため）
+_fake_spikehat = types.ModuleType("spikehat")
+_fake_spikehat.SpikeHat        = object   # main() は呼ばないので stub で十分
+_fake_spikehat.DEVICE_MOTOR_L  = DEVICE_MOTOR_L
+_fake_spikehat.DEVICE_FORCE    = DEVICE_FORCE
+_fake_spikehat.DEVICE_COLOR    = DEVICE_COLOR
+_fake_spikehat.DEVICE_DISTANCE = DEVICE_DISTANCE
+sys.modules.setdefault("spikehat", _fake_spikehat)
+
+if _raspi_dir not in sys.path:
+    sys.path.insert(0, _raspi_dir)
+
+from sonar_radar import SonarRadarSM, SAMPLE_INTERVAL_S
+
 # ─── 定数 ────────────────────────────────────────────────────────────────────
 
 ASSET_NAME = "SonarRadarController"
 ROBOT_NAME = "SonarRadarAsset"
 STEP_USEC  = 1000   # conductor の delta と一致させる（plant も 1ms）
 
-# ─── sonar_radar.py の差し替え実行 ────────────────────────────────────────────
-
-def _make_sim_time_module(hat: HakoSpikeHat):
-    """sonar_radar.py の time.monotonic() をシミュレーション時刻に差し替えたモジュールを返す。
-    wait_for_force_release の MIN_PRESS_S チェックおよびタイムスタンプ出力が
-    壁時計に依存するため必要。exec_module 前に sys.modules['time'] へ差し込む。"""
-    import time as _real_time
-    sim_time_mod = types.ModuleType("time")
-    for _attr in dir(_real_time):
-        setattr(sim_time_mod, _attr, getattr(_real_time, _attr))
-    sim_time_mod.monotonic = lambda: hat._sim_time_usec / 1_000_000
-    return sim_time_mod
-
+# ─── SonarRadarSM を HakoSpikeHat で駆動する ────────────────────────────────
 
 def _run_sonar_radar(hat: HakoSpikeHat):
-    """sonar_radar.py に HakoSpikeHat を差し込んで実行する。"""
-    fake_spikehat = types.ModuleType("spikehat")
-    fake_spikehat.SpikeHat        = lambda **_kw: hat
-    fake_spikehat.DEVICE_MOTOR_L  = DEVICE_MOTOR_L
-    fake_spikehat.DEVICE_FORCE    = DEVICE_FORCE
-    fake_spikehat.DEVICE_COLOR    = DEVICE_COLOR
-    fake_spikehat.DEVICE_DISTANCE = DEVICE_DISTANCE
-
-    # exec_module 前に差し替えることで sonar_radar.py の import time が
-    # シミュレーション時刻版を掴む
-    import time as _real_time
-    _orig_time = sys.modules.get("time")
-    fake_time = _make_sim_time_module(hat)
-    sys.modules["spikehat"] = fake_spikehat
-    sys.modules["time"]     = fake_time
-
-    try:
-        spec = importlib.util.spec_from_file_location("sonar_radar", _radar_file)
-        mod  = importlib.util.module_from_spec(spec)
-        sys.modules["sonar_radar"] = mod
-        spec.loader.exec_module(mod)
-        mod.main()
-    finally:
-        # 他モジュールへの影響を避けるため time を元に戻す
-        if _orig_time is not None:
-            sys.modules["time"] = _orig_time
-        else:
-            del sys.modules["time"]
+    """SonarRadarSM を HakoSpikeHat で駆動する。終了したら results を返す。"""
+    sm = SonarRadarSM(clock=lambda: hat._sim_time_usec / 1_000_000)
+    while not sm.is_terminated():
+        sm.tick(hat)
+        hat.sleep(SAMPLE_INTERVAL_S)
+    return sm.results
 
 
 # ─── Hakoniwa コールバック ────────────────────────────────────────────────────
@@ -124,13 +108,14 @@ def on_reset(_ctx):
 def _make_on_manual_timing_control(hat: HakoSpikeHat):
     def on_manual_timing_control(_ctx):
         try:
-            _run_sonar_radar(hat)
+            results = _run_sonar_radar(hat)
+            print(f"[INFO] ctrl: スキャン完了 ({len(results)} サンプル)", file=sys.stderr)
         except HakoControllerStopped:
             print("[INFO] ctrl: シミュレーション停止を検出", file=sys.stderr)
         except KeyboardInterrupt:
             print("[INFO] ctrl: KeyboardInterrupt", file=sys.stderr)
         except Exception as e:
-            print(f"[ERROR] ctrl: sonar_radar failed: {e}", file=sys.stderr)
+            print(f"[ERROR] ctrl: SonarRadarSM failed: {e}", file=sys.stderr)
             import traceback; traceback.print_exc(file=sys.stderr)
 
         print("[INFO] ctrl: sonar_radar 終了。hako-cmd stop/reset を発行します...",
@@ -157,9 +142,6 @@ def main():
 
     if not os.path.exists(PDU_DEF_PATH):
         print(f"[ERROR] PDU def not found: {PDU_DEF_PATH}", file=sys.stderr)
-        sys.exit(1)
-    if not os.path.exists(_radar_file):
-        print(f"[ERROR] sonar_radar.py not found: {_radar_file}", file=sys.stderr)
         sys.exit(1)
 
     hat = HakoSpikeHat(robot_name=ROBOT_NAME)

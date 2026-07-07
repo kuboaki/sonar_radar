@@ -1,35 +1,30 @@
 #!/usr/bin/env python3
 """
-sonar_radar.py - レーダースキャナー（PWM旋回・マーカー反転版）
+sonar_radar.py - レーダースキャナー（ステートマシン版）
 
-ハードウェア構成（減速ギア経由でドームを旋回）:
+SonarRadarSM クラスが1ティックだけ処理してすぐリターンする「開いたループ」を実装する。
+外側ループ（system_driver）が tick() を繰り返し呼び、hat.sleep() で時間を進める。
+
+  実機:      time.sleep() で進める → main() が担う
+  Hakoniwa: hakopy.usleep() で進める → sonar_radar_ctrl_hako.py が担う
+  sim:       hat.sleep() で MuJoCo ステップを進める → sonar_radar_sim.py が担う
+
+ステートマシン状態:
+  INIT → CALIBRATING → WAIT_FOR_START → SCANNING → WAIT_FOR_STOP → TERMINATED
+
+ハードウェア構成:
   ポートA(0): Lアンギュラーモーター  - ドーム旋回（ギア減速 1:3、回転方向反転）
   ポートB(1): フォースセンサー       - スタート/ストップトリガー
   ポートC(2): カラーセンサー         - 旋回端マーカー検出（赤=左端, 青=右端）
   ポートD(3): 距離センサー           - 障害物計測
-
-動作:
-  1. 0位置へ旋回（return_to_origin）
-  2. フォースセンサーの「押して離す」でスキャン開始
-  3. PWMで旋回し、赤・青マーカーを検出したら旋回方向を反転
-  4. インターバルごとに角度と距離を記録
-  5. フォースセンサーを再度「押して離す」とスキャン終了、結果をJSONで出力
-
-フォースセンサーはエッジ検出（押してから離したときに反応）のため、
-長押しやチャタリングによる誤動作を抑制している。
 """
 
 import sys
 import json
 import time
-
-# --- 起動時刻（経過時間ログ用） ---
-START_TIME = time.monotonic()
+import enum
 
 # --- 実機専用設定 ---
-# spikehat（実機用ライブラリ）が見つからない場合は実機のインストール先を
-# パスに追加して再import する（sim実行時はinjectされたモジュールが
-# 既にロード済みのため、ここには到達しない）。
 try:
     from spikehat import SpikeHat, DEVICE_MOTOR_L, DEVICE_FORCE, DEVICE_COLOR, DEVICE_DISTANCE
 except ImportError:
@@ -38,38 +33,37 @@ except ImportError:
     from spikehat import SpikeHat, DEVICE_MOTOR_L, DEVICE_FORCE, DEVICE_COLOR, DEVICE_DISTANCE
 
 # --- ハードウェア設定 ---
-PORT_MOTOR    = 0   # ポートA
-PORT_FORCE    = 1   # ポートB
-PORT_COLOR    = 2   # ポートC
-PORT_DISTANCE = 3   # ポートD
+PORT_MOTOR    = 0
+PORT_FORCE    = 1
+PORT_COLOR    = 2
+PORT_DISTANCE = 3
 
 # --- 距離設定 ---
-DIST_MIN_MM    = 50      # 有効距離下限
-DIST_MAX_MM    = 300     # 有効距離上限
-DIST_INVALID   = 2000    # 測定不能値
-DIST_OFFSET_MM = 25      # センサー面が旋回軸より前方にある分の距離補正値（mm）
+DIST_MIN_MM    = 50
+DIST_MAX_MM    = 300
+DIST_INVALID   = 2000
+DIST_OFFSET_MM = 25
 
-# --- モーター設定（PWM） ---
-SCAN_PWM          = 0.1    # 旋回速度（デューティ比）
-ALIGN_SPEED       = 10     # return_to_origin 時の速度
-SAMPLE_INTERVAL_S = 0.05   # サンプリング間隔（秒）
+# --- モーター設定 ---
+SCAN_PWM          = 0.1
+ALIGN_SPEED       = 10
+SAMPLE_INTERVAL_S = 0.05
 
-# --- ギア比（モーター:dome = 1:3、回転方向反転） ---
-GEAR_RATIO = 3
-
-# sonar_dome はベベルギア(12T-36T)の噛み合わせ上、Lモーターの機械的0位置で
-# 正面から5度ズレた状態になる。この補正値（dome角度）を加えた位置を論理的な0°（正面）とする。
+# --- ギア比 ---
+GEAR_RATIO         = 3
 SENSOR_HOME_OFFSET = 5
+
+# フォースセンサー: 有効押下の最低ティック数（MIN_PRESS = 0.1s / SAMPLE_INTERVAL_S）
+MIN_PRESS_TICKS = 2
 
 
 def dome_to_motor(dome_deg):
-    """dome角度（度）をLモーターのエンコーダ角度（度）に変換する"""
     return -dome_deg * GEAR_RATIO
 
 
 def motor_to_dome(motor_deg):
-    """Lモーターのエンコーダ角度（度）をdome角度（度）に変換する"""
     return -motor_deg / GEAR_RATIO
+
 
 # --- カラー判定 ---
 RED_SAT_MIN  = 40
@@ -80,55 +74,19 @@ BLUE_SAT_MIN = 580
 BLUE_VAL_MIN = 100
 
 
-# --- カラー判定 ---
 def is_red(hue, sat, val):
-    """赤マーカー判定（hueは色相環の両端付近）"""
     if sat < RED_SAT_MIN or val < RED_VAL_MIN:
         return False
     return hue >= 340 or hue <= 20
 
 
 def is_blue(hue, sat, val):
-    """青マーカー判定"""
     if sat < BLUE_SAT_MIN or val < BLUE_VAL_MIN:
         return False
     return BLUE_HUE_LO <= hue <= BLUE_HUE_HI
 
 
-# --- フォースセンサー -------------------------------------------------------
-MIN_PRESS_S = 0.1   # 押し時間がこれ未満はチャタリングとみなして無視
-
-
-def wait_for_force_release(hat, port):
-    """
-    フォースセンサーが「押されてから離される」まで待つ（エッジ検出）。
-    MIN_PRESS_S 未満の押しはチャタリングとみなして再待機する。
-    """
-    while True:
-        # 押されるまで待つ
-        while True:
-            try:
-                if hat.force_is_pressed(port):
-                    break
-            except RuntimeError:
-                pass
-            hat.sleep(0.02)
-        press_time = time.monotonic()
-        # 離されるまで待つ
-        while True:
-            try:
-                if not hat.force_is_pressed(port):
-                    break
-            except RuntimeError:
-                pass
-            hat.sleep(0.02)
-        if time.monotonic() - press_time >= MIN_PRESS_S:
-            return
-
-
-# --- 距離フィルタ ---
 def filter_distance(mm):
-    """センサー生値を受け取り、旋回軸基準の有効距離を返す。範囲外はNone。"""
     if mm == DIST_INVALID:
         return None
     corrected = mm + DIST_OFFSET_MM
@@ -137,133 +95,197 @@ def filter_distance(mm):
     return corrected
 
 
-# --- キャリブレーション ---
-def calibrate(hat, port):
+# ─── ステートマシン ────────────────────────────────────────────────────────────
+
+class State(enum.Enum):
+    INIT           = 'INIT'
+    CALIBRATING    = 'CALIBRATING'
+    WAIT_FOR_START = 'WAIT_FOR_START'
+    SCANNING       = 'SCANNING'
+    WAIT_FOR_STOP  = 'WAIT_FOR_STOP'
+    TERMINATED     = 'TERMINATED'
+
+
+class SonarRadarSM:
     """
-    Lモーターを機械的0位置へ移動し、そこから SENSOR_HOME_OFFSET 度
-    （dome角度）だけ旋回してドームを正面に向ける。この位置を0°（正面）とする。
+    sonar_radar のステートマシン。
+    tick(hat) を呼ぶたびに1ステップ処理してすぐリターンする。
+    外側ループが hat.sleep() で時間を進める責任を持つ。
+
+    clock: 経過時間（秒）を返す callable。省略時は time.monotonic。
+           Hakoniwa では lambda: hat._sim_time_usec / 1e6 を渡す。
     """
-    print("キャリブレーション: 機械的0位置へ移動...", file=sys.stderr)
-    hat.motor_run_to_position(port, 0, ALIGN_SPEED)
-    hat.sleep(0.5)
 
-    offset_motor_deg = round(dome_to_motor(SENSOR_HOME_OFFSET))
-    print(f"SENSOR_HOME_OFFSET(dome {SENSOR_HOME_OFFSET}度 = motor {offset_motor_deg}度)分を補正...",
-          file=sys.stderr)
-    hat.motor_run_to_position(port, offset_motor_deg, ALIGN_SPEED)
-    hat.sleep(0.5)
+    def __init__(self, clock=None):
+        self._clock        = clock if clock is not None else time.monotonic
+        self.state         = State.INIT
+        self.results       = []
+        self._zero_pos     = 0
+        self._calib_step   = 0      # 0: to 0, 1: to offset
+        self._force_on     = False  # 現在フォースセンサーが押されているか
+        self._press_ticks  = 0     # 連続して押されているティック数
+        self._scan_pwm     = SCAN_PWM
+        self._on_marker    = False
+        self._scan_force_on = False
 
-    zero_pos = hat.motor_get_position(port)
-    print(f"キャリブレーション完了 (現在位置 = 0°, encoder={zero_pos})", file=sys.stderr)
-    return zero_pos
+    def tick(self, hat):
+        if   self.state == State.INIT:           self._tick_init(hat)
+        elif self.state == State.CALIBRATING:    self._tick_calibrating(hat)
+        elif self.state == State.WAIT_FOR_START: self._tick_wait_for_start(hat)
+        elif self.state == State.SCANNING:       self._tick_scanning(hat)
+        elif self.state == State.WAIT_FOR_STOP:  self._tick_wait_for_stop(hat)
 
+    def is_terminated(self):
+        return self.state == State.TERMINATED
 
-# --- 0位置への復帰 ---
-def return_to_origin(hat, port, zero_pos):
-    """現在位置からzero_pos（dome 0°）へ戻す"""
-    print(f"0位置へ復帰: zero_pos={zero_pos}", file=sys.stderr)
-    hat.motor_run_to_position(port, zero_pos, ALIGN_SPEED)
-    hat.sleep(0.5)
+    # ── INIT ──────────────────────────────────────────────────────────────────
 
+    def _tick_init(self, hat):
+        hat.port_config(PORT_MOTOR,    DEVICE_MOTOR_L)
+        hat.port_config(PORT_FORCE,    DEVICE_FORCE)
+        hat.port_config(PORT_COLOR,    DEVICE_COLOR)
+        hat.port_config(PORT_DISTANCE, DEVICE_DISTANCE)
+        self._calib_step = 0
+        print("キャリブレーション: 機械的0位置へ移動...", file=sys.stderr)
+        self.state = State.CALIBRATING
 
-# --- 連続スキャン ---
-def do_continuous_scan(hat, zero_pos):
-    """
-    PWMで旋回しながら SAMPLE_INTERVAL_S ごとに角度と距離を記録する。
-    赤・青マーカーを検出するたびに旋回方向を反転し、
-    フォースセンサーを「押して離す」と終了する。
-    戻り値: [{"angle": int, "dome_angle": float, "distance_mm": int|None}, ...]
-    """
-    results   = []
-    scan_pwm  = SCAN_PWM
-    on_marker = False
-    force_was_pressed = False
+    # ── CALIBRATING ───────────────────────────────────────────────────────────
 
-    print(f"連続スキャン開始: 速度(PWM)={scan_pwm}, 間隔={SAMPLE_INTERVAL_S*1000:.0f}ms",
-          file=sys.stderr)
+    def _tick_calibrating(self, hat):
+        if self._calib_step == 0:
+            if self._drive_to(hat, 0, ALIGN_SPEED):
+                self._calib_step = 1
+                offset = round(dome_to_motor(SENSOR_HOME_OFFSET))
+                print(f"SENSOR_HOME_OFFSET(dome {SENSOR_HOME_OFFSET}度 = motor {offset}度)分を補正...",
+                      file=sys.stderr)
+        else:
+            offset = round(dome_to_motor(SENSOR_HOME_OFFSET))
+            if self._drive_to(hat, offset, ALIGN_SPEED):
+                self._zero_pos    = hat.motor_get_position(PORT_MOTOR)
+                self._force_on    = False
+                self._press_ticks = 0
+                print(f"キャリブレーション完了 (現在位置 = 0°, encoder={self._zero_pos})",
+                      file=sys.stderr)
+                print("フォースセンサーを押して離すとスキャン開始します...", file=sys.stderr)
+                self.state = State.WAIT_FOR_START
 
-    hat.motor_pwm(PORT_MOTOR, scan_pwm)
+    # ── WAIT_FOR_START ────────────────────────────────────────────────────────
 
-    while True:
-        # マーカー検出でスキャン方向を反転（エッジ検出）
+    def _tick_wait_for_start(self, hat):
+        try:
+            pressed = hat.force_is_pressed(PORT_FORCE)
+        except RuntimeError:
+            return
+        if pressed and not self._force_on:
+            self._force_on    = True
+            self._press_ticks = 1
+        elif pressed and self._force_on:
+            self._press_ticks += 1
+        elif not pressed and self._force_on:
+            if self._press_ticks >= MIN_PRESS_TICKS:
+                print("スキャン開始", file=sys.stderr)
+                self._scan_pwm      = SCAN_PWM
+                self._on_marker     = False
+                self._scan_force_on = False
+                hat.motor_pwm(PORT_MOTOR, self._scan_pwm)
+                print(f"連続スキャン開始: 速度(PWM)={self._scan_pwm}, "
+                      f"間隔={SAMPLE_INTERVAL_S*1000:.0f}ms", file=sys.stderr)
+                self.state = State.SCANNING
+            self._force_on    = False
+            self._press_ticks = 0
+
+    # ── SCANNING ──────────────────────────────────────────────────────────────
+
+    def _tick_scanning(self, hat):
+        # マーカー検出
         try:
             h, s, v = hat.color_read_hsv(PORT_COLOR)
             marker = is_red(h, s, v) or is_blue(h, s, v)
-            if marker and not on_marker:
-                color_name = "赤" if is_red(h, s, v) else "青"
-                print(f"{color_name}マーカー検出: 反転します", file=sys.stderr)
-                scan_pwm = -scan_pwm
-                hat.motor_pwm(PORT_MOTOR, scan_pwm)
-            on_marker = marker
+            if marker and not self._on_marker:
+                name = "赤" if is_red(h, s, v) else "青"
+                print(f"{name}マーカー検出: 反転します", file=sys.stderr)
+                self._scan_pwm = -self._scan_pwm
+                hat.motor_pwm(PORT_MOTOR, self._scan_pwm)
+            self._on_marker = marker
         except RuntimeError:
             pass
 
         # 角度・距離を記録
         try:
-            angle = hat.motor_get_position(PORT_MOTOR) - zero_pos
+            angle      = hat.motor_get_position(PORT_MOTOR) - self._zero_pos
             dome_angle = motor_to_dome(angle)
         except RuntimeError:
-            angle = None
-            dome_angle = None
+            angle = dome_angle = None
 
         try:
             dist = filter_distance(hat.distance_read(PORT_DISTANCE))
         except RuntimeError:
             dist = None
 
-        results.append({"angle": angle, "dome_angle": dome_angle, "distance_mm": dist})
-        label = f"{dist:5d} mm" if dist is not None else " null"
-        angle_label = f"{angle:+4d}" if angle is not None else "  --"
-        dome_label = f"{dome_angle:+6.1f}" if dome_angle is not None else "    --"
-        elapsed = time.monotonic() - START_TIME
-        print(f"[{elapsed:6.2f}s] motor:{angle_label}° dome:{dome_label}° -> {label}", file=sys.stderr)
+        self.results.append({"angle": angle, "dome_angle": dome_angle, "distance_mm": dist})
 
-        # フォースセンサーの「押して離す」でスキャン終了（エッジ検出）
+        label      = f"{dist:5d} mm" if dist is not None else "  null"
+        angle_str  = f"{angle:+4d}" if angle is not None else "  --"
+        dome_str   = f"{dome_angle:+6.1f}" if dome_angle is not None else "    --"
+        elapsed    = self._clock()
+        print(f"[{elapsed:6.2f}s] motor:{angle_str}° dome:{dome_str}° -> {label}",
+              file=sys.stderr)
+
+        # フォースセンサー「押して離す」でスキャン終了
         try:
             pressed = hat.force_is_pressed(PORT_FORCE)
-            if force_was_pressed and not pressed:
+            if self._scan_force_on and not pressed:
                 print("フォースセンサー: スキャン終了", file=sys.stderr)
-                break
-            force_was_pressed = pressed
+                hat.motor_stop(PORT_MOTOR)
+                self.state = State.WAIT_FOR_STOP
+            self._scan_force_on = pressed
         except RuntimeError:
             pass
 
-        hat.sleep(SAMPLE_INTERVAL_S)
+    # ── WAIT_FOR_STOP ─────────────────────────────────────────────────────────
 
-    hat.motor_stop(PORT_MOTOR)
-    hat.sleep(0.5)
+    def _tick_wait_for_stop(self, hat):
+        print(f"0位置へ復帰: zero_pos={self._zero_pos}", file=sys.stderr)
+        # drive_to が完了するまで毎ティック呼ばれる
+        if self._drive_to(hat, self._zero_pos, ALIGN_SPEED):
+            self.state = State.TERMINATED
 
-    return results
+    # ── 内部ヘルパー ──────────────────────────────────────────────────────────
+
+    def _drive_to(self, hat, target: int, speed: int) -> bool:
+        """目標角度に向けて1ティック分トルクを適用する。到達したら True を返す。"""
+        try:
+            current = hat.motor_get_position(PORT_MOTOR)
+        except RuntimeError:
+            return False
+        err = target - current
+        if abs(err) < 3:
+            hat.motor_stop(PORT_MOTOR)
+            return True
+        pwm = (abs(speed) / 100.0) * 0.3
+        hat.motor_pwm(PORT_MOTOR, pwm if err > 0 else -pwm)
+        return False
 
 
-# --- メイン ---
+# ─── 実機用エントリポイント ────────────────────────────────────────────────────
+
 def main():
     try:
         hat_instance = SpikeHat()
     except RuntimeError:
         print("エラー: Build HAT ファームウェアがロードされていません。", file=sys.stderr)
-        print("run.sh を使うか、先に以下を実行してください:", file=sys.stderr)
-        print("  python3 -c \"from buildhat import Motor; Motor('A')\"", file=sys.stderr)
         sys.exit(1)
 
+    start_time = time.monotonic()
+
     with hat_instance as hat:
-        hat.port_config(PORT_MOTOR,    DEVICE_MOTOR_L)
-        hat.port_config(PORT_FORCE,    DEVICE_FORCE)
-        hat.port_config(PORT_COLOR,    DEVICE_COLOR)
-        hat.port_config(PORT_DISTANCE, DEVICE_DISTANCE)
         hat.sleep(1.0)
+        sm = SonarRadarSM(clock=lambda: time.monotonic() - start_time)
+        while not sm.is_terminated():
+            sm.tick(hat)
+            hat.sleep(SAMPLE_INTERVAL_S)
 
-        zero_pos = calibrate(hat, PORT_MOTOR)
-
-        print("フォースセンサーを押して離すとスキャン開始します...", file=sys.stderr)
-        wait_for_force_release(hat, PORT_FORCE)
-        print("スキャン開始", file=sys.stderr)
-
-        results = do_continuous_scan(hat, zero_pos)
-
-        return_to_origin(hat, PORT_MOTOR, zero_pos)
-
-    print(json.dumps(results, ensure_ascii=False, indent=2))
+    print(json.dumps(sm.results, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

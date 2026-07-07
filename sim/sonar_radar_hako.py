@@ -190,9 +190,9 @@ def on_simulation_step(_ctx):
     except Exception as e:
         print(f"[WARN] motor_angle PDU write failed: {e}", file=sys.stderr)
 
-    # 6. フォースセンサー → Bool PDU（常に false、将来実装）
+    # 6. フォースセンサー → Bool PDU
     try:
-        fs = Bool(); fs.data = False
+        fs = Bool(); fs.data = hat.force_is_pressed(PORT_FORCE)
         hakopy.pdu_write(ROBOT_NAME, CH_FORCE_SENSOR, py_to_pdu_Bool(fs), PDU_SIZE_FORCE)
     except Exception as e:
         print(f"[WARN] force_sensor PDU write failed: {e}", file=sys.stderr)

@@ -134,8 +134,8 @@ def _make_on_manual_timing_control(hat: HakoSpikeHat):
 
 def main():
     parser = argparse.ArgumentParser(description="sonar_radar Hakoniwa controller")
-    parser.add_argument("--auto-start", type=float, default=3.0, metavar="SEC",
-                        help="シミュレーション開始から SEC 秒後にスタートボタンを注入（デフォルト: 3.0）")
+    parser.add_argument("--auto-start", type=float, default=None, metavar="SEC",
+                        help="シミュレーション開始から SEC 秒後にスタートボタンを注入（省略時は物理ボタン操作）")
     parser.add_argument("--auto-stop",  type=float, default=None, metavar="SEC",
                         help="スタートボタン注入から SEC 秒後にストップボタンを注入")
     args = parser.parse_args()

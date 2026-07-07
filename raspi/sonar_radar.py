@@ -98,17 +98,18 @@ def filter_distance(mm):
 # ─── ステートマシン ────────────────────────────────────────────────────────────
 
 class State(enum.Enum):
-    INIT           = 'INIT'
-    CALIBRATING    = 'CALIBRATING'
-    WAIT_FOR_START = 'WAIT_FOR_START'
-    SCANNING       = 'SCANNING'
-    WAIT_FOR_STOP  = 'WAIT_FOR_STOP'
-    TERMINATED     = 'TERMINATED'
+    INIT              = 'INIT'
+    CALIB_TO_ZERO     = 'CALIB_TO_ZERO'     # 待つもの: モーターが機械的0位置に到達
+    CALIB_TO_OFFSET   = 'CALIB_TO_OFFSET'   # 待つもの: モーターがSENSOR_HOME_OFFSET位置に到達
+    WAIT_FOR_START    = 'WAIT_FOR_START'    # 待つもの: フォースセンサーの押下→解放
+    SCANNING          = 'SCANNING'          # 待つもの: フォースセンサーの押下→解放
+    RETURN_TO_ORIGIN  = 'RETURN_TO_ORIGIN'  # 待つもの: モーターがzero_posに到達
+    TERMINATED        = 'TERMINATED'
 
 
 class SonarRadarSM:
     """
-    sonar_radar のステートマシン。
+    sonar_radar のステートマシン（フラット1段）。
     tick(hat) を呼ぶたびに1ステップ処理してすぐリターンする。
     外側ループが hat.sleep() で時間を進める責任を持つ。
 
@@ -117,23 +118,23 @@ class SonarRadarSM:
     """
 
     def __init__(self, clock=None):
-        self._clock        = clock if clock is not None else time.monotonic
-        self.state         = State.INIT
-        self.results       = []
-        self._zero_pos     = 0
-        self._calib_step   = 0      # 0: to 0, 1: to offset
-        self._force_on     = False  # 現在フォースセンサーが押されているか
-        self._press_ticks  = 0     # 連続して押されているティック数
-        self._scan_pwm     = SCAN_PWM
-        self._on_marker    = False
+        self._clock         = clock if clock is not None else time.monotonic
+        self.state          = State.INIT
+        self.results        = []
+        self._zero_pos      = 0
+        self._force_on      = False
+        self._press_ticks   = 0
+        self._scan_pwm      = SCAN_PWM
+        self._on_marker     = False
         self._scan_force_on = False
 
     def tick(self, hat):
-        if   self.state == State.INIT:           self._tick_init(hat)
-        elif self.state == State.CALIBRATING:    self._tick_calibrating(hat)
-        elif self.state == State.WAIT_FOR_START: self._tick_wait_for_start(hat)
-        elif self.state == State.SCANNING:       self._tick_scanning(hat)
-        elif self.state == State.WAIT_FOR_STOP:  self._tick_wait_for_stop(hat)
+        if   self.state == State.INIT:             self._tick_init(hat)
+        elif self.state == State.CALIB_TO_ZERO:    self._tick_calib_to_zero(hat)
+        elif self.state == State.CALIB_TO_OFFSET:  self._tick_calib_to_offset(hat)
+        elif self.state == State.WAIT_FOR_START:   self._tick_wait_for_start(hat)
+        elif self.state == State.SCANNING:         self._tick_scanning(hat)
+        elif self.state == State.RETURN_TO_ORIGIN: self._tick_return_to_origin(hat)
 
     def is_terminated(self):
         return self.state == State.TERMINATED
@@ -145,31 +146,35 @@ class SonarRadarSM:
         hat.port_config(PORT_FORCE,    DEVICE_FORCE)
         hat.port_config(PORT_COLOR,    DEVICE_COLOR)
         hat.port_config(PORT_DISTANCE, DEVICE_DISTANCE)
-        self._calib_step = 0
         print("キャリブレーション: 機械的0位置へ移動...", file=sys.stderr)
-        self.state = State.CALIBRATING
+        self.state = State.CALIB_TO_ZERO
 
-    # ── CALIBRATING ───────────────────────────────────────────────────────────
+    # ── CALIB_TO_ZERO ─────────────────────────────────────────────────────────
+    # 待つもの: モーターが機械的0位置（encoder=0）に到達
 
-    def _tick_calibrating(self, hat):
-        if self._calib_step == 0:
-            if self._drive_to(hat, 0, ALIGN_SPEED):
-                self._calib_step = 1
-                offset = round(dome_to_motor(SENSOR_HOME_OFFSET))
-                print(f"SENSOR_HOME_OFFSET(dome {SENSOR_HOME_OFFSET}度 = motor {offset}度)分を補正...",
-                      file=sys.stderr)
-        else:
+    def _tick_calib_to_zero(self, hat):
+        if self._drive_to(hat, 0, ALIGN_SPEED):
             offset = round(dome_to_motor(SENSOR_HOME_OFFSET))
-            if self._drive_to(hat, offset, ALIGN_SPEED):
-                self._zero_pos    = hat.motor_get_position(PORT_MOTOR)
-                self._force_on    = False
-                self._press_ticks = 0
-                print(f"キャリブレーション完了 (現在位置 = 0°, encoder={self._zero_pos})",
-                      file=sys.stderr)
-                print("フォースセンサーを押して離すとスキャン開始します...", file=sys.stderr)
-                self.state = State.WAIT_FOR_START
+            print(f"SENSOR_HOME_OFFSET(dome {SENSOR_HOME_OFFSET}度 = motor {offset}度)分を補正...",
+                  file=sys.stderr)
+            self.state = State.CALIB_TO_OFFSET
+
+    # ── CALIB_TO_OFFSET ───────────────────────────────────────────────────────
+    # 待つもの: モーターがSENSOR_HOME_OFFSET位置に到達 → zero_pos を記録
+
+    def _tick_calib_to_offset(self, hat):
+        offset = round(dome_to_motor(SENSOR_HOME_OFFSET))
+        if self._drive_to(hat, offset, ALIGN_SPEED):
+            self._zero_pos    = hat.motor_get_position(PORT_MOTOR)
+            self._force_on    = False
+            self._press_ticks = 0
+            print(f"キャリブレーション完了 (現在位置 = 0°, encoder={self._zero_pos})",
+                  file=sys.stderr)
+            print("フォースセンサーを押して離すとスキャン開始します...", file=sys.stderr)
+            self.state = State.WAIT_FOR_START
 
     # ── WAIT_FOR_START ────────────────────────────────────────────────────────
+    # 待つもの: フォースセンサーの押下→解放（MIN_PRESS_TICKS 以上の押下）
 
     def _tick_wait_for_start(self, hat):
         try:
@@ -195,6 +200,7 @@ class SonarRadarSM:
             self._press_ticks = 0
 
     # ── SCANNING ──────────────────────────────────────────────────────────────
+    # 待つもの: フォースセンサーの押下→解放
 
     def _tick_scanning(self, hat):
         # マーカー検出
@@ -224,11 +230,10 @@ class SonarRadarSM:
 
         self.results.append({"angle": angle, "dome_angle": dome_angle, "distance_mm": dist})
 
-        label      = f"{dist:5d} mm" if dist is not None else "  null"
-        angle_str  = f"{angle:+4d}" if angle is not None else "  --"
-        dome_str   = f"{dome_angle:+6.1f}" if dome_angle is not None else "    --"
-        elapsed    = self._clock()
-        print(f"[{elapsed:6.2f}s] motor:{angle_str}° dome:{dome_str}° -> {label}",
+        label     = f"{dist:5d} mm" if dist is not None else "  null"
+        angle_str = f"{angle:+4d}" if angle is not None else "  --"
+        dome_str  = f"{dome_angle:+6.1f}" if dome_angle is not None else "    --"
+        print(f"[{self._clock():6.2f}s] motor:{angle_str}° dome:{dome_str}° -> {label}",
               file=sys.stderr)
 
         # フォースセンサー「押して離す」でスキャン終了
@@ -237,17 +242,18 @@ class SonarRadarSM:
             if self._scan_force_on and not pressed:
                 print("フォースセンサー: スキャン終了", file=sys.stderr)
                 hat.motor_stop(PORT_MOTOR)
-                self.state = State.WAIT_FOR_STOP
+                print(f"0位置へ復帰: zero_pos={self._zero_pos}", file=sys.stderr)
+                self.state = State.RETURN_TO_ORIGIN
             self._scan_force_on = pressed
         except RuntimeError:
             pass
 
-    # ── WAIT_FOR_STOP ─────────────────────────────────────────────────────────
+    # ── RETURN_TO_ORIGIN ──────────────────────────────────────────────────────
+    # 待つもの: モーターがzero_posに到達
 
-    def _tick_wait_for_stop(self, hat):
-        print(f"0位置へ復帰: zero_pos={self._zero_pos}", file=sys.stderr)
-        # drive_to が完了するまで毎ティック呼ばれる
+    def _tick_return_to_origin(self, hat):
         if self._drive_to(hat, self._zero_pos, ALIGN_SPEED):
+            print("0位置へ復帰完了", file=sys.stderr)
             self.state = State.TERMINATED
 
     # ── 内部ヘルパー ──────────────────────────────────────────────────────────

@@ -13,6 +13,7 @@ sonar_radar_hako.py の --viewer オプションから mjpython で自動起動�
 import sys
 import os
 import time
+import json
 import struct
 
 import mujoco
@@ -25,7 +26,14 @@ _xml_path = os.environ.get(
 
 QPOS_FILE      = "/tmp/sonar_radar_qpos.bin"
 PRESS_REQ_FILE = "/tmp/sonar_radar_press_req"
+WALL_CMD_FILE  = "/tmp/sonar_radar_wall_cmd"
 _IDLE_TIMEOUT  = 5.0   # この秒数ファイル更新がなければ自動終了
+
+_KEY_RIGHT = 262
+_KEY_LEFT  = 263
+_KEY_DOWN  = 264
+_KEY_UP    = 265
+_selected_wall = [0]  # 0=wall_a, 1=wall_b
 
 mdl = mujoco.MjModel.from_xml_path(_xml_path)
 dat = mujoco.MjData(mdl)
@@ -39,6 +47,13 @@ last_update = time.monotonic()
 print(f"[viewer] モデル: {_xml_path}  nq={nq}", file=sys.stderr, flush=True)
 print(f"[viewer] qpos ファイル監視: {QPOS_FILE}", file=sys.stderr, flush=True)
 
+def _send_wall_cmd(wall, axis, direction):
+    try:
+        with open(WALL_CMD_FILE, "w") as f:
+            json.dump({"wall": wall, "axis": axis, "dir": direction}, f)
+    except Exception as e:
+        print(f"[viewer] WARN: wall cmd write failed: {e}", file=sys.stderr, flush=True)
+
 def _key_callback(keycode):
     if keycode == ord(' '):
         try:
@@ -47,6 +62,17 @@ def _key_callback(keycode):
             print("[viewer] starter: 押下リクエスト送信", file=sys.stderr, flush=True)
         except Exception as e:
             print(f"[viewer] WARN: press req write failed: {e}", file=sys.stderr, flush=True)
+        return
+    if keycode == ord('1'):
+        _selected_wall[0] = 0
+        print("[viewer] 黄色壁(wall_a)を選択", file=sys.stderr, flush=True)
+    elif keycode == ord('2'):
+        _selected_wall[0] = 1
+        print("[viewer] 黒壁(wall_b)を選択", file=sys.stderr, flush=True)
+    elif keycode == _KEY_RIGHT: _send_wall_cmd(_selected_wall[0], "x", +1)
+    elif keycode == _KEY_LEFT:  _send_wall_cmd(_selected_wall[0], "x", -1)
+    elif keycode == _KEY_UP:    _send_wall_cmd(_selected_wall[0], "y", +1)
+    elif keycode == _KEY_DOWN:  _send_wall_cmd(_selected_wall[0], "y", -1)
 
 with mujoco.viewer.launch_passive(mdl, dat, key_callback=_key_callback) as viewer:
     viewer.cam.lookat[:] = mdl.stat.center
@@ -69,6 +95,8 @@ with mujoco.viewer.launch_passive(mdl, dat, key_callback=_key_callback) as viewe
                         dat.qpos[i] = v
                     mujoco.mj_kinematics(mdl, dat)
                     mujoco.mj_comPos(mdl, dat)
+        except FileNotFoundError:
+            pass
         except Exception as e:
             print(f"[viewer] WARN: {e}", file=sys.stderr, flush=True)
 

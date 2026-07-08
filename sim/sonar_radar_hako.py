@@ -35,6 +35,7 @@ PDU チャンネル（SonarRadarAsset）:
 import sys
 import os
 import argparse
+import json
 import math
 import struct
 import subprocess as _subprocess
@@ -104,13 +105,25 @@ _state = {
     "nq":           0,
     "press_remain": 0,    # press_ctrl を印加し続ける残りステップ数
     "press_aid":    -1,   # press_ctrl アクチュエーター ID
+    "wall_aids":    {},   # (wall_index, axis) -> actuator_id
+    "wall_ctrl":    {},   # (wall_index, axis) -> 現在の ctrl 値 [m]
 }
 
 _DEBUG_INTERVAL  = 100
 _QPOS_FILE       = "/tmp/sonar_radar_qpos.bin"
 _PRESS_REQ_FILE  = "/tmp/sonar_radar_press_req"
+_WALL_CMD_FILE   = "/tmp/sonar_radar_wall_cmd"
 _PRESS_FORCE     = 3.0    # press_ctrl に印加する力 [N]
 _PRESS_FRAMES    = 150    # 印加するステップ数（1ms × 150 = 150ms）
+
+_WALL_STUD = 0.008
+_WALL_RANGES = {
+    # (wall_index, axis) -> (actuator_name, min, max)
+    (0, "x"): ("wall_a_x_ctrl", -0.08,  0.08),
+    (0, "y"): ("wall_a_y_ctrl", -0.08,  0.20),
+    (1, "x"): ("wall_b_x_ctrl", -0.08,  0.136),
+    (1, "y"): ("wall_b_y_ctrl", -0.04,  0.25),
+}
 
 
 def _write_qpos(hat, nq: int):
@@ -154,7 +167,24 @@ def on_simulation_step(_ctx):
         except Exception:
             pass
 
-    # 1b. viewer からの press リクエストを検出して press_ctrl を印加
+    # 1b. viewer からの壁移動コマンドを処理
+    if _state["wall_aids"] and os.path.exists(_WALL_CMD_FILE):
+        try:
+            with open(_WALL_CMD_FILE) as f:
+                cmd = json.load(f)
+            os.remove(_WALL_CMD_FILE)
+            key = (int(cmd["wall"]), str(cmd["axis"]))
+            aid = _state["wall_aids"].get(key, -1)
+            if aid >= 0:
+                _, lo, hi = _WALL_RANGES[key]
+                cur = round(_state["wall_ctrl"].get(key, 0.0) / _WALL_STUD) * _WALL_STUD
+                val = max(lo, min(hi, cur + int(cmd["dir"]) * _WALL_STUD))
+                _state["wall_ctrl"][key] = val
+                hat.sim_set_ctrl(aid, val)
+        except Exception as e:
+            print(f"[WARN] wall_cmd failed: {e}", file=sys.stderr)
+
+    # 1c. viewer からの press リクエストを検出して press_ctrl を印加
     if _state["press_aid"] >= 0:
         if os.path.exists(_PRESS_REQ_FILE):
             try:
@@ -286,6 +316,11 @@ def main():
             _aid = _mj.mj_name2id(_mdl_tmp, _mj.mjtObj.mjOBJ_ACTUATOR, "press_ctrl")
             _state["press_aid"] = _aid
             print(f"[INFO] press_ctrl actuator id={_aid}", file=sys.stderr)
+            for (wi, ax), (aname, _, _) in _WALL_RANGES.items():
+                wid = _mj.mj_name2id(_mdl_tmp, _mj.mjtObj.mjOBJ_ACTUATOR, aname)
+                if wid >= 0:
+                    _state["wall_aids"][(wi, ax)] = wid
+            print(f"[INFO] wall actuator ids={_state['wall_aids']}", file=sys.stderr)
         except Exception:
             pass
         print(f"[INFO] SpikeHat initialized: {_xml_path}", file=sys.stderr)

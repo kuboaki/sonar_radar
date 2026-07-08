@@ -39,6 +39,7 @@ import json
 import math
 import struct
 import subprocess as _subprocess
+import shutil
 import time as _time
 import signal
 
@@ -334,7 +335,7 @@ def main():
     viewer_proc = None
     if args.viewer:
         viewer_script = os.path.join(_here, "sonar_radar_viewer.py")
-        mjpython = "/opt/homebrew/bin/mjpython"
+        mjpython = os.environ.get("MJPYTHON", shutil.which("mjpython") or "/opt/homebrew/bin/mjpython")
         if not os.path.exists(mjpython):
             print(f"[WARN] mjpython not found: {mjpython}", file=sys.stderr)
         elif not os.path.exists(viewer_script):

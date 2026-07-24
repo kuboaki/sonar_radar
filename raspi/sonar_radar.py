@@ -10,7 +10,10 @@ SonarRadarSM クラスが1ティックだけ処理してすぐリターンする
   sim:       hat.sleep() で MuJoCo ステップを進める → sonar_radar_sim.py が担う
 
 ステートマシン状態:
-  INIT → CALIBRATING → WAIT_FOR_START → SCANNING → WAIT_FOR_STOP → TERMINATED
+  INIT → CALIBRATING → WAIT_FOR_PEER_CALIBRATED → WAIT_FOR_START → SCANNING → WAIT_FOR_STOP → TERMINATED
+
+  WAIT_FOR_PEER_CALIBRATED は他マシン連携時のみ意味を持つ状態。
+  on_event 未設定（単独実行）の場合は即座に通過する。詳細は SonarRadarSM を参照。
 
 ハードウェア構成:
   ポートA(0): Lアンギュラーモーター  - ドーム旋回（ギア減速 1:3、回転方向反転）
@@ -98,13 +101,14 @@ def filter_distance(mm):
 # ─── ステートマシン ────────────────────────────────────────────────────────────
 
 class State(enum.Enum):
-    INIT              = 'INIT'
-    CALIB_TO_ZERO     = 'CALIB_TO_ZERO'     # 待つもの: モーターが機械的0位置に到達
-    CALIB_TO_OFFSET   = 'CALIB_TO_OFFSET'   # 待つもの: モーターがSENSOR_HOME_OFFSET位置に到達
-    WAIT_FOR_START    = 'WAIT_FOR_START'    # 待つもの: フォースセンサーの押下→解放
-    SCANNING          = 'SCANNING'          # 待つもの: フォースセンサーの押下→解放
-    RETURN_TO_ORIGIN  = 'RETURN_TO_ORIGIN'  # 待つもの: モーターがzero_posに到達
-    TERMINATED        = 'TERMINATED'
+    INIT                     = 'INIT'
+    CALIB_TO_ZERO            = 'CALIB_TO_ZERO'            # 待つもの: モーターが機械的0位置に到達
+    CALIB_TO_OFFSET          = 'CALIB_TO_OFFSET'          # 待つもの: モーターがSENSOR_HOME_OFFSET位置に到達
+    WAIT_FOR_PEER_CALIBRATED = 'WAIT_FOR_PEER_CALIBRATED' # 待つもの: 相手側のキャリブレーション完了通知
+    WAIT_FOR_START           = 'WAIT_FOR_START'           # 待つもの: フォースセンサーの押下→解放
+    SCANNING                 = 'SCANNING'                 # 待つもの: フォースセンサーの押下→解放
+    RETURN_TO_ORIGIN         = 'RETURN_TO_ORIGIN'         # 待つもの: モーターがzero_posに到達
+    TERMINATED               = 'TERMINATED'
 
 
 class SonarRadarSM:
@@ -115,10 +119,16 @@ class SonarRadarSM:
 
     clock: 経過時間（秒）を返す callable。省略時は time.monotonic。
            Hakoniwa では lambda: hat._sim_time_usec / 1e6 を渡す。
+    on_event: 状態遷移イベント発生時に呼ばれる callable(name: str, payload: dict) -> None。
+              省略時は何もしない（単独実行時の動作は変わらない）。
+              他マシンとの連携（例: sonar_radar-zenoh-bridge）は、このコールバックで
+              自分のイベントを送信し、notify_*() メソッドで相手のイベントを
+              受け取ることで実現する。SonarRadarSM 自身は通信手段を一切知らない。
     """
 
-    def __init__(self, clock=None):
+    def __init__(self, clock=None, on_event=None):
         self._clock       = clock if clock is not None else time.monotonic
+        self._on_event    = on_event
         self.state        = State.INIT
         self.results      = []
         self._zero_pos    = 0
@@ -126,14 +136,21 @@ class SonarRadarSM:
         self._press_ticks = 0      # クリック検出用（共通）
         self._scan_pwm    = SCAN_PWM
         self._on_marker   = False
+        # ── 他マシン連携用（すべて省略可） ──────────────────────────────
+        # on_event 未設定（単独実行）なら相手不在とみなし、最初から通過済み扱いにする
+        self._peer_calibrated   = (on_event is None)
+        self._external_start    = False
+        self._external_stop     = False
+        self._external_detected = False
 
     def tick(self, hat):
-        if   self.state == State.INIT:             self._tick_init(hat)
-        elif self.state == State.CALIB_TO_ZERO:    self._tick_calib_to_zero(hat)
-        elif self.state == State.CALIB_TO_OFFSET:  self._tick_calib_to_offset(hat)
-        elif self.state == State.WAIT_FOR_START:   self._tick_wait_for_start(hat)
-        elif self.state == State.SCANNING:         self._tick_scanning(hat)
-        elif self.state == State.RETURN_TO_ORIGIN: self._tick_return_to_origin(hat)
+        if   self.state == State.INIT:                     self._tick_init(hat)
+        elif self.state == State.CALIB_TO_ZERO:             self._tick_calib_to_zero(hat)
+        elif self.state == State.CALIB_TO_OFFSET:           self._tick_calib_to_offset(hat)
+        elif self.state == State.WAIT_FOR_PEER_CALIBRATED:  self._tick_wait_for_peer_calibrated(hat)
+        elif self.state == State.WAIT_FOR_START:            self._tick_wait_for_start(hat)
+        elif self.state == State.SCANNING:                  self._tick_scanning(hat)
+        elif self.state == State.RETURN_TO_ORIGIN:          self._tick_return_to_origin(hat)
 
     def is_terminated(self):
         return self.state == State.TERMINATED
@@ -169,27 +186,46 @@ class SonarRadarSM:
             self._press_ticks = 0
             print(f"キャリブレーション完了 (現在位置 = 0°, encoder={self._zero_pos})",
                   file=sys.stderr)
-            print("フォースセンサーを押して離すとスキャン開始します...", file=sys.stderr)
+            self._emit("calibrated", {})
+            if self._peer_calibrated:
+                print("フォースセンサーを押して離すとスキャン開始します...", file=sys.stderr)
+                self.state = State.WAIT_FOR_START
+            else:
+                print("相手側のキャリブレーション完了を待っています...", file=sys.stderr)
+                self.state = State.WAIT_FOR_PEER_CALIBRATED
+
+    # ── WAIT_FOR_PEER_CALIBRATED ─────────────────────────────────────────────
+    # 待つもの: 相手側（実機 or シム）のキャリブレーション完了通知
+    # on_event 未設定（単独実行）の場合は __init__ 時点で通過済み扱いのため、
+    # この状態を経由すること自体がない。
+
+    def _tick_wait_for_peer_calibrated(self, hat):
+        if self._peer_calibrated:
+            print("相手側のキャリブレーション完了を確認。フォースセンサーを押して離すと"
+                  "スキャン開始します...", file=sys.stderr)
             self.state = State.WAIT_FOR_START
 
     # ── WAIT_FOR_START ────────────────────────────────────────────────────────
-    # 待つもの: フォースセンサーのクリック（押下→解放）
+    # 待つもの: フォースセンサーのクリック（押下→解放）、または外部からの開始通知
 
     def _tick_wait_for_start(self, hat):
-        if self._detect_force_click(hat):
+        local_start = self._detect_force_click(hat)
+        if local_start or self._consume_external_start():
             print("スキャン開始", file=sys.stderr)
             self._scan_pwm  = SCAN_PWM
             self._on_marker = False
             hat.motor_pwm(PORT_MOTOR, self._scan_pwm)
             print(f"連続スキャン開始: 速度(PWM)={self._scan_pwm}, "
                   f"間隔={SAMPLE_INTERVAL_S*1000:.0f}ms", file=sys.stderr)
+            if local_start:
+                self._emit("start", {})
             self.state = State.SCANNING
 
     # ── SCANNING ──────────────────────────────────────────────────────────────
     # 待つもの: フォースセンサーの押下→解放
 
     def _tick_scanning(self, hat):
-        # マーカー検出
+        # マーカー検出（ローカル）
         try:
             h, s, v = hat.color_read_hsv(PORT_COLOR)
             marker = is_red(h, s, v) or is_blue(h, s, v)
@@ -198,9 +234,16 @@ class SonarRadarSM:
                 print(f"{name}マーカー検出: 反転します", file=sys.stderr)
                 self._scan_pwm = -self._scan_pwm
                 hat.motor_pwm(PORT_MOTOR, self._scan_pwm)
+                self._emit("detected", {})
             self._on_marker = marker
         except RuntimeError:
             pass
+
+        # マーカー検出（相手側からの外部通知）
+        if self._consume_external_detected():
+            print("相手側のマーカー検出を受信: 反転します", file=sys.stderr)
+            self._scan_pwm = -self._scan_pwm
+            hat.motor_pwm(PORT_MOTOR, self._scan_pwm)
 
         # 角度・距離を記録
         try:
@@ -214,7 +257,9 @@ class SonarRadarSM:
         except RuntimeError:
             dist = None
 
-        self.results.append({"angle": angle, "dome_angle": dome_angle, "distance_mm": dist})
+        sample = {"angle": angle, "dome_angle": dome_angle, "distance_mm": dist}
+        self.results.append(sample)
+        self._emit("scan", sample)
 
         label     = f"{dist:5d} mm" if dist is not None else "  null"
         angle_str = f"{angle:+4d}" if angle is not None else "  --"
@@ -222,11 +267,14 @@ class SonarRadarSM:
         print(f"[{self._clock():6.2f}s] motor:{angle_str}° dome:{dome_str}° -> {label}",
               file=sys.stderr)
 
-        # フォースセンサーのクリックでスキャン終了
-        if self._detect_force_click(hat):
-            print("フォースセンサー: スキャン終了", file=sys.stderr)
+        # スキャン終了（ローカルのフォースセンサー、または外部からの停止通知）
+        local_stop = self._detect_force_click(hat)
+        if local_stop or self._consume_external_stop():
+            print("スキャン終了", file=sys.stderr)
             hat.motor_stop(PORT_MOTOR)
             print(f"0位置へ復帰: zero_pos={self._zero_pos}", file=sys.stderr)
+            if local_stop:
+                self._emit("stop", {})
             self.state = State.RETURN_TO_ORIGIN
 
     # ── RETURN_TO_ORIGIN ──────────────────────────────────────────────────────
@@ -236,6 +284,51 @@ class SonarRadarSM:
         if self._drive_to(hat, self._zero_pos, ALIGN_SPEED):
             print("0位置へ復帰完了", file=sys.stderr)
             self.state = State.TERMINATED
+
+    # ── 外部（他マシン）へのイベント送信 ────────────────────────────────────
+
+    def _emit(self, name: str, payload: dict) -> None:
+        """送信フック。on_event が未設定（単独実行）なら何もしない。"""
+        if self._on_event is not None:
+            self._on_event(name, payload)
+
+    # ── 外部（他マシン）からのイベント通知 ──────────────────────────────────
+    # 単独実行時はどこからも呼ばれないため no-op のまま無害。
+    # sonar_radar-zenoh-bridge 側の Zenoh 受信コールバックがこれらを呼ぶ想定。
+
+    def notify_peer_calibrated(self) -> None:
+        """相手側のキャリブレーション完了を通知する。"""
+        self._peer_calibrated = True
+
+    def notify_start(self) -> None:
+        """外部（相手側 or ブリッジの疑似starter）からのスキャン開始要求を通知する。"""
+        self._external_start = True
+
+    def notify_stop(self) -> None:
+        """外部（相手側 or ブリッジの疑似starter）からのスキャン停止要求を通知する。"""
+        self._external_stop = True
+
+    def notify_detected(self) -> None:
+        """相手側のマーカー検出（方向反転）を通知する。"""
+        self._external_detected = True
+
+    def _consume_external_start(self) -> bool:
+        if self._external_start:
+            self._external_start = False
+            return True
+        return False
+
+    def _consume_external_stop(self) -> bool:
+        if self._external_stop:
+            self._external_stop = False
+            return True
+        return False
+
+    def _consume_external_detected(self) -> bool:
+        if self._external_detected:
+            self._external_detected = False
+            return True
+        return False
 
     # ── 内部ヘルパー ──────────────────────────────────────────────────────────
 

@@ -145,7 +145,7 @@ class SonarRadarSM:
         hat.port_config(PORT_FORCE,    DEVICE_FORCE)
         hat.port_config(PORT_COLOR,    DEVICE_COLOR)
         hat.port_config(PORT_DISTANCE, DEVICE_DISTANCE)
-        print("キャリブレーション: 機械的0位置へ移動...", file=sys.stderr)
+        print(f"[{self._clock():6.2f}s] キャリブレーション: 機械的0位置へ移動...", file=sys.stderr)
         self.state = State.CALIB_TO_ZERO
 
     # ── CALIB_TO_ZERO ─────────────────────────────────────────────────────────
@@ -154,7 +154,7 @@ class SonarRadarSM:
     def _tick_calib_to_zero(self, hat):
         if self._drive_to(hat, 0, ALIGN_SPEED):
             offset = round(dome_to_motor(SENSOR_HOME_OFFSET))
-            print(f"SENSOR_HOME_OFFSET(dome {SENSOR_HOME_OFFSET}度 = motor {offset}度)分を補正...",
+            print(f"[{self._clock():6.2f}s] SENSOR_HOME_OFFSET(dome {SENSOR_HOME_OFFSET}度 = motor {offset}度)分を補正...",
                   file=sys.stderr)
             self.state = State.CALIB_TO_OFFSET
 
@@ -167,9 +167,9 @@ class SonarRadarSM:
             self._zero_pos    = hat.motor_get_position(PORT_MOTOR)
             self._force_on    = False
             self._press_ticks = 0
-            print(f"キャリブレーション完了 (現在位置 = 0°, encoder={self._zero_pos})",
+            print(f"[{self._clock():6.2f}s] キャリブレーション完了 (現在位置 = 0°, encoder={self._zero_pos})",
                   file=sys.stderr)
-            print("フォースセンサーを押して離すとスキャン開始します...", file=sys.stderr)
+            print(f"[{self._clock():6.2f}s] フォースセンサーを押して離すとスキャン開始します...", file=sys.stderr)
             self.state = State.WAIT_FOR_START
 
     # ── WAIT_FOR_START ────────────────────────────────────────────────────────
@@ -177,7 +177,7 @@ class SonarRadarSM:
 
     def _tick_wait_for_start(self, hat):
         if self._detect_force_click(hat):
-            print("スキャン開始", file=sys.stderr)
+            print(f"[{self._clock():6.2f}s] スキャン開始", file=sys.stderr)
             self._scan_pwm  = SCAN_PWM
             self._on_marker = False
             hat.motor_pwm(PORT_MOTOR, self._scan_pwm)
@@ -224,9 +224,9 @@ class SonarRadarSM:
 
         # フォースセンサーのクリックでスキャン終了
         if self._detect_force_click(hat):
-            print("フォースセンサー: スキャン終了", file=sys.stderr)
+            print(f"[{self._clock():6.2f}s] フォースセンサー: スキャン終了", file=sys.stderr)
             hat.motor_stop(PORT_MOTOR)
-            print(f"0位置へ復帰: zero_pos={self._zero_pos}", file=sys.stderr)
+            print(f"[{self._clock():6.2f}s] 0位置へ復帰: zero_pos={self._zero_pos}", file=sys.stderr)
             self.state = State.RETURN_TO_ORIGIN
 
     # ── RETURN_TO_ORIGIN ──────────────────────────────────────────────────────
@@ -234,7 +234,7 @@ class SonarRadarSM:
 
     def _tick_return_to_origin(self, hat):
         if self._drive_to(hat, self._zero_pos, ALIGN_SPEED):
-            print("0位置へ復帰完了", file=sys.stderr)
+            print(f"[{self._clock():6.2f}s] 0位置へ復帰完了", file=sys.stderr)
             self.state = State.TERMINATED
 
     # ── 内部ヘルパー ──────────────────────────────────────────────────────────
@@ -277,11 +277,13 @@ class SonarRadarSM:
 # ─── 実機用エントリポイント ────────────────────────────────────────────────────
 
 def main():
+    t_process_start = time.monotonic()
     try:
         hat_instance = SpikeHat()
     except RuntimeError:
         print("エラー: Build HAT ファームウェアがロードされていません。", file=sys.stderr)
         sys.exit(1)
+    print(f"[SpikeHat()構築: {time.monotonic() - t_process_start:.2f}s]", file=sys.stderr)
 
     start_time = time.monotonic()
 

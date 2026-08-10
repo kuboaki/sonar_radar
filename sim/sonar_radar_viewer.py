@@ -37,6 +37,10 @@ _selected_wall = [0]  # 0=wall_a, 1=wall_b
 
 mdl = mujoco.MjModel.from_xml_path(_xml_path)
 dat = mujoco.MjData(mdl)
+
+mdl.stat.center[:] = [0.0, 0.02, 0.04]
+mdl.stat.extent = 0.22
+
 nq  = mdl.nq
 fmt = f"{nq}d"
 sz  = nq * 8
@@ -74,7 +78,10 @@ def _key_callback(keycode):
     elif keycode == _KEY_UP:    _send_wall_cmd(_selected_wall[0], "y", +1)
     elif keycode == _KEY_DOWN:  _send_wall_cmd(_selected_wall[0], "y", -1)
 
-with mujoco.viewer.launch_passive(mdl, dat, key_callback=_key_callback) as viewer:
+with mujoco.viewer.launch_passive(
+        mdl, dat,
+        key_callback=_key_callback,
+        show_left_ui=False) as viewer:
     viewer.cam.lookat[:] = mdl.stat.center
     viewer.cam.distance  = mdl.stat.extent * 1.8
     viewer.cam.azimuth   = 155.0

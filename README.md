@@ -71,8 +71,10 @@ and then runs `raspi/sonar_radar.py` unmodified — any change made to
 always runs at real-time speed (`--speed 1.0`, fixed) so its behavior can be
 compared directly against the real hardware.
 
-The Control tab in the viewer lets you move the obstacle wall (`wall_x_ctrl`,
-`wall_y_ctrl`) and press the stop switch (`press_ctrl`) interactively. See
+The viewer's left UI panel is hidden by default for a cleaner view; interact
+with the simulation using keyboard shortcuts instead: `Space` presses the
+start/stop switch, `1`/`2` select the yellow/black obstacle wall, and the
+arrow keys move the selected wall (left/right = X, up/down = Y). See
 [mujoco_model/studio_to_mujoco.md](mujoco_model/studio_to_mujoco.md) for how
 the MuJoCo model itself is built from the Bricklink Studio design.
 

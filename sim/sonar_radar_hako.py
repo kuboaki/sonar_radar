@@ -335,7 +335,16 @@ def main():
     viewer_proc = None
     if args.viewer:
         viewer_script = os.path.join(_here, "sonar_radar_viewer.py")
-        mjpython = os.environ.get("MJPYTHON", shutil.which("mjpython") or "/opt/homebrew/bin/mjpython")
+        # run-hakopy.bash は常に <hakoniwa-mujoco-robots>/.venv/bin/python3.14 を
+        # exec するため、同じ venv 内の mjpython が最も確実に mujoco を解決できる。
+        # PATH検索(shutil.which)はpyenv等の別バージョンのmjpythonを誤って拾う
+        # ことがある(.venv側にmujocoが無く、そちらでは起動できない)ため、
+        # MJPYTHON環境変数が無指定でも同一venvを優先する。
+        _venv_mjpython = os.path.join(os.path.dirname(sys.executable), "mjpython")
+        mjpython = (os.environ.get("MJPYTHON")
+                    or (_venv_mjpython if os.path.exists(_venv_mjpython) else None)
+                    or shutil.which("mjpython")
+                    or "/opt/homebrew/bin/mjpython")
         if not os.path.exists(mjpython):
             print(f"[WARN] mjpython not found: {mjpython}", file=sys.stderr)
         elif not os.path.exists(viewer_script):

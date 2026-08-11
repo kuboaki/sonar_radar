@@ -64,7 +64,7 @@
       <geom name="base_gray_geom"  type="mesh" mesh="radar_base_gray_mesh"
             contype="0" conaffinity="0" rgba="0.366 0.361 0.371 1"/>
       <geom name="base_red_geom"  type="mesh" mesh="radar_base_red_mesh"
-            contype="0" conaffinity="0" rgba="0.578 0.010 0.002 1"/>
+            contype="0" conaffinity="0" rgba="0.020 0.250 0.200 1"/>
       <geom name="base_blue_geom" type="mesh" mesh="radar_base_blue_mesh"
             contype="0" conaffinity="0" rgba="0.000 0.089 0.515 1"/>
 

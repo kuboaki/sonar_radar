@@ -66,18 +66,25 @@ def motor_to_dome(motor_deg):
 
 
 # --- カラー判定 ---
-RED_SAT_MIN  = 40
-RED_VAL_MIN  = 40
+# 実機実測(2026-08-11)に基づくしきい値。赤は色相0/360度の境界に近く、
+# センサーノイズでhueが339〜342付近を行き来しチャタリングが起きたこと、
+# 加えて赤のしきい値は彩度・明度の条件が緩く機体周辺の茶色パーツ
+# (hue=348〜353)を誤検出するリスクがあったことが実測で確認され、緑に
+# 変更した(sonar_radar-zenoh-bridge/bridge/real_marker_detector.pyと同じ値)。
+GREEN_HUE_LO = 145
+GREEN_HUE_HI = 185
+GREEN_SAT_MIN = 150
+GREEN_VAL_MIN = 50
 BLUE_HUE_LO  = 210
 BLUE_HUE_HI  = 270
 BLUE_SAT_MIN = 580
 BLUE_VAL_MIN = 100
 
 
-def is_red(hue, sat, val):
-    if sat < RED_SAT_MIN or val < RED_VAL_MIN:
+def is_green(hue, sat, val):
+    if sat < GREEN_SAT_MIN or val < GREEN_VAL_MIN:
         return False
-    return hue >= 340 or hue <= 20
+    return GREEN_HUE_LO <= hue <= GREEN_HUE_HI
 
 
 def is_blue(hue, sat, val):
@@ -192,9 +199,9 @@ class SonarRadarSM:
         # マーカー検出
         try:
             h, s, v = hat.color_read_hsv(PORT_COLOR)
-            marker = is_red(h, s, v) or is_blue(h, s, v)
+            marker = is_green(h, s, v) or is_blue(h, s, v)
             if marker and not self._on_marker:
-                name = "赤" if is_red(h, s, v) else "青"
+                name = "緑" if is_green(h, s, v) else "青"
                 print(f"{name}マーカー検出: 反転します", file=sys.stderr)
                 self._scan_pwm = -self._scan_pwm
                 hat.motor_pwm(PORT_MOTOR, self._scan_pwm)

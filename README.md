@@ -17,12 +17,14 @@ can be developed and tuned in simulation before running it on the real robot.
 |------|--------|------|
 | A (0) | SPIKE Prime L Angular Motor | Dome rotation (1:3 reduction gear, direction-reversed) |
 | B (1) | SPIKE Prime Force Sensor | Scan stop switch |
-| C (2) | SPIKE Prime Color Sensor | End-stop marker detection (red = left end, blue = right end) |
+| C (2) | SPIKE Prime Color Sensor | End-stop marker detection (green = left end, blue = right end) |
 | D (3) | SPIKE Prime Distance Sensor | Obstacle measurement |
 
 ### Rotation Markers
 
-- **Red marker** — left end (negative direction)
+- **Green marker** — left end (negative direction) (formerly red; changed 2026-08-11 after real-hardware
+  measurements showed hue chattering near the threshold and false-positive detection against a brown
+  chassis part)
 - **Blue marker** — right end (positive direction)
 
 The dome scans back and forth, reversing direction whenever it detects either marker,

@@ -36,8 +36,10 @@ MuJoCoのジョイント（関節）は body の階層で表現する。Studio�
 MuJoCoのSTLメッシュは単色しか指定できない。複数色を再現するには、色ごとにSTLを分けてgeomを複数定義する必要がある。そのため、色の異なるパーツは別サブモデルとして分離しておく。
 
 例：
-- `marker_red` … 赤マーカーブロック（`39789.dat` + ブッシュ `3713.dat`）
-- `marker_blue` … 青マーカーブロック（`39789.dat` + ブッシュ `3713.dat`）
+- `marker_left` … 左限界マーカーブロック（`39789.dat` + ブッシュ `3713.dat`）。検出時にドームは左限界(9時方向)を向いている
+- `marker_right` … 右限界マーカーブロック（`39789.dat` + ブッシュ `3713.dat`）。検出時にドームは右限界(3時方向)を向いている
+
+> **命名は色ではなく機能(検出時のドーム旋回限界)を基準にする。** `sonar_radar09`までは`marker_red`/`marker_blue`という色ベースの命名だったが、実機実測(2026-08-11)でマーカー色を赤→緑に変更した際、色名と実際の色が食い違う問題が起きた。`sonar_radar10`で`marker_left`/`marker_right`(色を検出したときにドームがどちらの旋回限界にいるかを表す)へリネームし解消した。マーカー自体の物理的な設置位置(左/右)ではなく、検出結果としての意味(旋回限界)を基準にしている点に注意(12時方向を超音波センサー正面としたとき、緑マーカーは3時側=物理的には右に設置されているが、緑を検出する = ドームが9時側=左限界にある、という対応)。
 
 > **注意：** Studioでは単一ブロックのサブモデルは作成できない。ブッシュなど固定パーツと組み合わせてサブモデルにする。
 
@@ -53,17 +55,17 @@ MuJoCoのSTLメッシュは単色しか指定できない。複数色を再現�
 > メッシュは `libspikehat_sim/examples/test_motor.xml` 側に切り出され、
 > `sonar_radar.xml` には含まれない。
 
-### 1.2 サブモデルの構造例（sonar_radar08）
+### 1.2 サブモデルの構造例（sonar_radar10）
 
 ```
-sonar_radar08.io
+sonar_radar10.io
 ├── radar_base          … 台座グレーパーツ
-│   ├── marker_blue     … 青マーカー（サブモデル）
+│   ├── marker_right    … 右限界マーカー（サブモデル。命名基準は1.1節参照）
 │   │   ├── 3713.dat    … ブッシュ（グレー）
 │   │   └── 39789.dat   … マーカーブロック（青）
-│   └── marker_red      … 赤マーカー（サブモデル）
+│   └── marker_left     … 左限界マーカー（サブモデル）
 │       ├── 3713.dat    … ブッシュ（グレー）
-│       └── 39789.dat   … マーカーブロック（赤）
+│       └── 39789.dat   … マーカーブロック（緑）
 ├── radar_dome          … ドーム一式（36Tベベルギア32498.dat、距離/カラーセンサー含む）
 ├── bevel_gear_12       … モーター側12Tベベルギア（旋回軸=このサブモデル原点）
 ├── obstacle_wall_a     … 障害物壁A（黄色、独立サブモデル）
@@ -150,10 +152,10 @@ sonar_radar07.io  [EMPTY]
 ├── radar_base       [EMPTY]
 │   ├── 32054.dat    [MESH]
 │   ├── ...
-│   ├── marker_blue  [EMPTY]
+│   ├── marker_right [EMPTY]
 │   │   ├── 3713.dat  [MESH]
 │   │   └── 39789.dat [MESH]
-│   └── marker_red   [EMPTY]
+│   └── marker_left  [EMPTY]
 │       ├── 3713.dat.001  [MESH]
 │       └── 39789.dat.001 [MESH]
 ├── radar_dome       [EMPTY]
@@ -209,7 +211,7 @@ LDraw座標系からMuJoCo座標系への変換を以下の手順で行う。
 
 ### 4.4 サブモデル境界の扱い（stop_at_empty）
 
-`radar_base` のSTL生成時は、`marker_red`/`marker_blue` のメッシュを誤って含めないよう
+`radar_base` のSTL生成時は、`marker_left`/`marker_right` のメッシュを誤って含めないよう
 `stop_at_empty=True` を指定する。これにより、EMPTY（サブモデル境界）に到達したところで
 再帰収集を停止する。
 
@@ -248,8 +250,8 @@ gray/red/blueの3つは、全パーツの統合bboxから計算した共通オ�
 | ファイル | 内容 | rgba |
 |----------|------|------|
 | `radar_base_gray.stl` | 台座グレーパーツ | `0.366 0.361 0.371 1` |
-| `radar_base_red.stl` | マーカーブロック(旧・赤。実機実測(2026-08-11)でチャタリング・誤検出が判明し緑に変更。STL/メッシュ名・geom名`base_red_geom`は据え置き、色のみ`sonar_radar.xml`側で`0.020 0.250 0.200 1`(HSV変換でhue≈167、実機実測のhue158〜170に整合)に上書き) | `0.578 0.010 0.002 1`(旧) |
-| `radar_base_blue.stl` | 青マーカーブロック | `0.000 0.089 0.515 1` |
+| `radar_base_left.stl` | 左限界マーカーブロック(緑検出時。旧`radar_base_red.stl`/`base_red_geom`。実機実測(2026-08-11)でチャタリング・誤検出が判明し赤→緑に変更、2026-08-12にsonar_radar10でファイル名・geom名も`left`/`right`(機能ベース)にリネーム) | `0.020 0.250 0.200 1`(HSV変換でhue≈167、実機実測のhue158〜170に整合) |
+| `radar_base_right.stl` | 右限界マーカーブロック(青検出時。旧`radar_base_blue.stl`/`base_blue_geom`) | `0.000 0.089 0.515 1` |
 | `radar_dome.stl` | ドーム一式（36Tベベルギア含む） | `0.2 0.5 0.2 1` |
 | `bevel_gear_12.stl` | モーター側12Tベベルギア | `0.9 0.7 0.1 1` |
 
@@ -267,8 +269,8 @@ gray/red/blueの3つは、全パーツの統合bboxから計算した共通オ�
 Studio サブモデル        MuJoCo XML
 ────────────────────    ──────────────────────────────────────────
 radar_base           →  <body name="radar_base">
-  marker_red         →    <geom name="base_red_geom" .../>  ※同じbody内に複数geom
-  marker_blue        →    <geom name="base_blue_geom" .../>
+  marker_left        →    <geom name="base_left_geom" .../>  ※同じbody内に複数geom
+  marker_right       →    <geom name="base_right_geom" .../>
 
 bevel_gear_12        →  <body name="motor_rotor">           ← motor_joint(hinge)
                             <geom name="bevel_gear_12_geom" .../>
@@ -659,6 +661,15 @@ Studioモデルを変更した場合、変更の種類によって必要な作�
 ---
 
 ## 12. 変更履歴
+
+### v0.11.0（2026-08-12）
+
+**マーカーのサブモデル名を色ベース→機能ベースに統一（Left/Right命名統一）**
+
+- Studio(`sonar_radar10.io`)で`marker_red`/`marker_blue`を`marker_left`/`marker_right`にリネーム。命名基準は「色を検出したときドームがどちらの旋回限界にいるか」（1.1節の注記参照。マーカー自体の物理設置位置とは対応が逆転する点に注意）。
+- `blender_export.py`のオブジェクト参照・出力STLファイル名を追従（`radar_base_red.stl`/`radar_base_blue.stl` → `radar_base_left.stl`/`radar_base_right.stl`）。Blenderのヘッドレス実行（`blender --background sonar_radar10.blend --python blender_export.py`）でSTL再生成・動作確認済み。
+- `sonar_radar.xml`のmesh asset名・geom名を追従（`radar_base_red_mesh`/`base_red_geom` → `radar_base_left_mesh`/`base_left_geom`、blue側も同様）。rgba値（色）自体は変更なし。
+- 2026-08-11のマイルストーン7（development_log.md）で合意した「別途まとまった作業として行う」TODOの実施。
 
 ### v0.10.2（2026-07-06）
 

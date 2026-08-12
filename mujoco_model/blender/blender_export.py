@@ -1,16 +1,22 @@
 """
 Blender用スクリプト: STL形式で直接書き出し（numpy-stl使用）
 
-対応モデル: sonar_radar08.io
+対応モデル: sonar_radar10.io
   Blenderシーン上のオブジェクト階層:
     radar_base      … 台座グレーパーツ（地面プレート39369含む、マーカー/壁を含まない）
-    marker_red      … 赤マーカーブロック（39789系）
-    marker_blue     … 青マーカーブロック（39789系）
+    marker_left     … 左限界マーカーブロック（39789系、検出時にドームは左限界。旧marker_red）
+    marker_right    … 右限界マーカーブロック（39789系、検出時にドームは右限界。旧marker_blue）
     radar_dome      … ドーム（36Tギアを含まない）
     bevel_gear_12   … モーター側12Tベベルギア（旋回軸=このEMPTY原点）
     bevel_gear_36   … ドーム側36Tベベルギア一式（32498+6589+32073、旋回軸=このEMPTY原点）
     obstacle_wall_a … 壁ブロックA（最上位オブジェクト）
     obstacle_wall_b … 壁ブロックB（最上位オブジェクト）
+
+変更点（sonar_radar09→10）:
+  - marker_red/marker_blue を marker_left/marker_right にリネーム(色ベース→機能ベースの
+    命名に統一。色自体は緑/青のまま変更なし、名前だけが「検出時にドームがどちらの
+    旋回限界にいるか」を表すようになった。2026-08-12、development_log.md
+    マイルストーン7で合意した「Left/Right命名統一」の実施)
 
 変更点（sonar_radar07→08）:
   - bevel_gear_36 を新規追加（旧版では32498.dat が radar_dome 内に埋め込まれていた）
@@ -30,8 +36,8 @@ Blender用スクリプト: STL形式で直接書き出し（numpy-stl使用）
 
 出力:
   radar_base_gray.stl   … 台座グレーパーツ（地面プレート含む）
-  radar_base_red.stl    … 赤マーカーブロック
-  radar_base_blue.stl   … 青マーカーブロック
+  radar_base_left.stl   … 左限界マーカーブロック(緑、旧radar_base_red.stl)
+  radar_base_right.stl  … 右限界マーカーブロック(青、旧radar_base_blue.stl)
   bevel_gear_12.stl     … モーター側12Tベベルギア
   bevel_gear_36.stl     … ドーム側36Tベベルギア一式
   radar_dome.stl        … ドーム（36Tギアなし）
@@ -221,8 +227,8 @@ for o in sorted(bpy.data.objects, key=lambda x: x.name):
 
 base_root    = bpy.data.objects.get("radar_base")
 panel_root   = bpy.data.objects.get("ground_plate")
-red_root     = bpy.data.objects.get("marker_red")
-blue_root    = bpy.data.objects.get("marker_blue")
+left_root    = bpy.data.objects.get("marker_left")
+right_root   = bpy.data.objects.get("marker_right")
 dome_root    = bpy.data.objects.get("radar_dome")
 gear12_root  = bpy.data.objects.get("bevel_gear_12")
 gear36_root  = bpy.data.objects.get("bevel_gear_36")
@@ -232,8 +238,8 @@ wall_b_root  = bpy.data.objects.get("obstacle_wall_b")
 
 base_meshes   = collect_mesh_descendants(base_root,   stop_at_empty=True) if base_root   else []
 panel_meshes  = collect_mesh_descendants(panel_root)  if panel_root  else []
-red_meshes    = collect_mesh_descendants(red_root)    if red_root    else []
-blue_meshes   = collect_mesh_descendants(blue_root)   if blue_root   else []
+left_meshes   = collect_mesh_descendants(left_root)   if left_root   else []
+right_meshes  = collect_mesh_descendants(right_root)  if right_root  else []
 dome_meshes   = collect_mesh_descendants(dome_root,   stop_at_empty=True) if dome_root   else []
 gear12_meshes = collect_mesh_descendants(gear12_root) if gear12_root else []
 gear36_meshes = collect_mesh_descendants(gear36_root) if gear36_root else []
@@ -243,8 +249,8 @@ wall_b_meshes = collect_mesh_descendants(wall_b_root) if wall_b_root else []
 print(f"\n収集結果:")
 print(f"  radar_base      = {len(base_meshes)} MESH  {'OK' if base_root   else 'NOT FOUND'}")
 print(f"  ground_plate    = {len(panel_meshes)} MESH  {'OK' if panel_root  else 'NOT FOUND'}")
-print(f"  marker_red      = {len(red_meshes)} MESH  {'OK' if red_root    else 'NOT FOUND'}")
-print(f"  marker_blue     = {len(blue_meshes)} MESH  {'OK' if blue_root   else 'NOT FOUND'}")
+print(f"  marker_left     = {len(left_meshes)} MESH  {'OK' if left_root   else 'NOT FOUND'}")
+print(f"  marker_right    = {len(right_meshes)} MESH  {'OK' if right_root  else 'NOT FOUND'}")
 print(f"  radar_dome      = {len(dome_meshes)} MESH  {'OK' if dome_root   else 'NOT FOUND'}")
 print(f"  bevel_gear_12   = {len(gear12_meshes)} MESH  {'OK' if gear12_root else 'NOT FOUND'}")
 print(f"  bevel_gear_36   = {len(gear36_meshes)} MESH  {'OK' if gear36_root else 'NOT FOUND'}")
@@ -284,7 +290,7 @@ print("=" * 60)
 
 # 共有オフセットは ground_plate も含めた全体の bbox から計算する。
 # こうすることで ground_plate を分離しても座標原点が変わらない。
-all_base_meshes = base_meshes + panel_meshes + red_meshes + blue_meshes
+all_base_meshes = base_meshes + panel_meshes + left_meshes + right_meshes
 if all_base_meshes:
     (x0,x1),(y0,y1),(z0,z1) = combined_bbox(all_base_meshes)
     cx, cy = (x0+x1)/2, (y0+y1)/2
@@ -328,32 +334,32 @@ base_half_Z = export_stl(
     out_filename  = "radar_base_gray.stl",
 )
 
-# ── marker_red エクスポート ───────────────────────────────
+# ── marker_left エクスポート ───────────────────────────────
 
 print("\n" + "=" * 60)
-print("marker_red 処理")
+print("marker_left 処理")
 print("=" * 60)
 
 export_stl(
-    meshes        = red_meshes,
-    name          = "marker_red",
+    meshes        = left_meshes,
+    name          = "marker_left",
     center_mode   = "shared",
     shared_offset = base_shared_offset,
-    out_filename  = "radar_base_red.stl",
+    out_filename  = "radar_base_left.stl",
 )
 
-# ── marker_blue エクスポート ──────────────────────────────
+# ── marker_right エクスポート ──────────────────────────────
 
 print("\n" + "=" * 60)
-print("marker_blue 処理")
+print("marker_right 処理")
 print("=" * 60)
 
 export_stl(
-    meshes        = blue_meshes,
-    name          = "marker_blue",
+    meshes        = right_meshes,
+    name          = "marker_right",
     center_mode   = "shared",
     shared_offset = base_shared_offset,
-    out_filename  = "radar_base_blue.stl",
+    out_filename  = "radar_base_right.stl",
 )
 
 # ── bevel_gear_12 エクスポート ────────────────────────────

@@ -30,6 +30,8 @@ can be developed and tuned in simulation before running it on the real robot.
 The dome scans back and forth, reversing direction whenever it detects either marker,
 until the force sensor (stop switch) is pressed.
 
+![Marker mechanism close-up: green marker at the left end, blue at the right end](docs/marker_left_right_closeup.png)
+
 ## Scan Specification
 
 | Parameter | Value |

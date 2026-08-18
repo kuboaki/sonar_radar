@@ -32,6 +32,8 @@ LEGO SPIKE Prime + Raspberry Pi Build HAT を使った2Dレーダースキャナ
 
 ドームは緑・青マーカーを検出するたびに旋回方向を反転しながら往復スキャンを行います。
 
+![マーカー機構クローズアップ: 左端が緑、右端が青](docs/marker_left_right_closeup.png)
+
 ## スキャン仕様
 
 | パラメータ | 値 |

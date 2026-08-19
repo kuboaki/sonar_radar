@@ -1,0 +1,208 @@
+<mujoco model="sonar_radar">
+
+  <compiler angle="degree" meshdir="meshes/"/>
+
+  <option timestep="0.001" gravity="0 0 -9.81"/>
+
+  <visual>
+    <headlight diffuse="0.7 0.7 0.7" ambient="0.3 0.3 0.3" specular="0.1 0.1 0.1"/>
+  </visual>
+
+  <asset>
+    <mesh name="radar_base_panel_mesh" file="radar_base_panel.stl" scale="1 1 1"/>
+    <mesh name="radar_base_gray_mesh"  file="radar_base_gray.stl"  scale="1 1 1"/>
+    <mesh name="radar_base_left_mesh"  file="radar_base_left.stl"  scale="1 1 1"/>
+    <mesh name="radar_base_right_mesh" file="radar_base_right.stl" scale="1 1 1"/>
+    <mesh name="radar_dome_mesh"      file="radar_dome.stl"      scale="1 1 1"/>
+    <mesh name="distance_sensor_mesh" file="distance_sensor.stl" scale="1 1 1"/>
+    <mesh name="color_sensor_mesh"    file="color_sensor.stl" scale="1 1 1"/>
+    <mesh name="force_sensor_body_mesh" file="force_sensor_body.stl" scale="1 1 1"/>
+    <mesh name="force_sensor_button_mesh" file="force_sensor_button.stl" scale="1 1 1"/>
+    <mesh name="press_block_mesh"      file="press_block.stl"      scale="1 1 1"/>
+    <mesh name="bevel_gear_12_mesh"   file="bevel_gear_12.stl"   scale="1 1 1"/>
+    <mesh name="bevel_gear_36_mesh"   file="bevel_gear_36.stl"   scale="1 1 1"/>
+    <mesh name="obstacle_wall_a_mesh" file="obstacle_wall_a.stl" scale="1 1 1"/>
+    <mesh name="obstacle_wall_b_mesh" file="obstacle_wall_b.stl" scale="1 1 1"/>
+  </asset>
+
+  <asset>
+      <texture type="skybox" builtin="flat" rgb1="15 15 18" rgb2="15 15 18" width="512" height="512"/>
+   </asset>
+
+  <worldbody>
+
+    <light name="light_top"  pos="0 0 1.5" dir="0 0 -1"
+           diffuse="0.8 0.8 0.8" specular="0.2 0.2 0.2" directional="true"/>
+    <light name="light_fill" pos="1 -1 0.8" dir="-1 1 -0.8"
+           diffuse="0.4 0.4 0.4" specular="0.0 0.0 0.0" directional="true"/>
+
+    <geom name="floor" type="plane" size="1 1 0.01"
+      rgba="0.08 0.08 0.09 1" contype="1" conaffinity="1"/>
+
+    <!-- 壁A: 地面ブロックの穴(8mmピッチ)に合わせた初期配置。
+         wall_a_x/wall_a_y で水平面内を移動、観測域外(y方向後方)への退避可能。
+         sonar_radar08.io の obstacle_wall_a サブモデルに対応。 -->
+    <body name="wall_body_a" pos="0.0080 -0.0380 0.0000">
+      <joint name="wall_a_x" type="slide" axis="1 0 0" range="-0.08 0.08" damping="5.0"/>
+      <joint name="wall_a_y" type="slide" axis="0 1 0" range="-0.080 0.20" damping="5.0"/>
+      <inertial pos="0 0 0" mass="0.05" diaginertia="0.0001 0.0001 0.0001"/>
+      <geom name="wall_a_geom" type="mesh" mesh="obstacle_wall_a_mesh"
+            contype="1" conaffinity="1" rgba="0.8 0.8 0.2 0.4"/>
+    </body>
+
+    <!-- 壁B: 初期は壁Aの隣。観測域外(y方向後方)へ退避可能。
+         sonar_radar08.io の obstacle_wall_b サブモデルに対応。 -->
+    <body name="wall_body_b" pos="-0.0480 -0.0796 0.0000">
+      <joint name="wall_b_x" type="slide" axis="1 0 0" range="-0.08 0.136" damping="5.0"/>
+      <joint name="wall_b_y" type="slide" axis="0 1 0" range="-0.040 0.25" damping="5.0"/>
+      <inertial pos="0 0 0" mass="0.05" diaginertia="0.0001 0.0001 0.0001"/>
+      <geom name="wall_b_geom" type="mesh" mesh="obstacle_wall_b_mesh"
+            contype="1" conaffinity="1" rgba="0.1 0.1 0.1 0.4"/>
+    </body>
+
+    <!-- 台座: ワールドに固定 -->
+    <body name="radar_base" pos="0 0 0" euler="0 0 0">
+      <inertial pos="0 0 0" mass="1.0" diaginertia="0.01 0.01 0.01"/>
+      <geom name="base_panel_geom" type="mesh" mesh="radar_base_panel_mesh"
+            contype="0" conaffinity="0" rgba="0.366 0.361 0.371 1"/>
+      <geom name="base_gray_geom"  type="mesh" mesh="radar_base_gray_mesh"
+            contype="0" conaffinity="0" rgba="0.366 0.361 0.371 1"/>
+      <geom name="base_left_geom"  type="mesh" mesh="radar_base_left_mesh"
+            contype="0" conaffinity="0" rgba="0.020 0.250 0.200 1"/>
+      <geom name="base_right_geom" type="mesh" mesh="radar_base_right_mesh"
+            contype="0" conaffinity="0" rgba="0.000 0.089 0.515 1"/>
+
+      <!-- モーター・ドーム柱まわりの衝突ガード（壁が侵入しないようにする）。
+           位置・サイズはビューアで確認して調整すること。
+           確認後は rgba の alpha を 0 にして不可視化する。 -->
+      <!-- モーター柱（motor_rotor 周辺）のガード -->
+      <!-- ガードジオムは薄いスラブ（高さ4mm）にして、センサーのレイキャストが
+           通過する高さ（30mm以上）に干渉しないようにする -->
+      <!-- モーター柱（motor_rotor 周辺）のガード -->
+      <geom name="radar_column_guard" type="box"
+            pos="0.008 0.060 0.002" size="0.030 0.030 0.002"
+            contype="1" conaffinity="1" rgba="0.9 0.5 0.1 0.3"/>
+      <!-- ドーム旋回範囲ガード: bevel_gear_36 軸中心の円柱 -->
+      <geom name="dome_sweep_guard" type="cylinder"
+            pos="0.0076 0.0728 0.002" size="0.040 0.002"
+            contype="1" conaffinity="1" rgba="0.5 0.8 0.9 0.3"/>
+
+      <!-- モーターローター（12Tベベルギアを保持）。
+           pos はblender_export_log.txtの motor_rotor 値を使用。 -->
+      <body name="motor_rotor" pos="0.0078 0.0482 0.0237" euler="0 0 0">
+        <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
+        <joint name="motor_joint" type="hinge" axis="0 0 -1"
+               damping="0.85" armature="0.001"/>
+        <geom name="bevel_gear_12_geom" type="mesh" mesh="bevel_gear_12_mesh"
+              contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>
+      </body>
+
+      <!-- 36Tベベルギア（ドーム旋回軸）。motor_rotorとギア比1:3・逆回転で連動。
+           pos は blender_export_log.txt の bevel_gear_36 値を使用。 -->
+      <body name="bevel_gear_36" pos="0.0076 0.0728 0.0300" euler="0 0 0">
+        <inertial pos="0 0 0" mass="0.05" diaginertia="0.0005 0.0005 0.0005"/>
+        <joint name="dome_joint" type="hinge" axis="0 0 1"
+               damping="0.1" armature="0.0005"/>
+        <geom name="bevel_gear_36_geom" type="mesh" mesh="bevel_gear_36_mesh"
+              contype="0" conaffinity="0" rgba="0.9 0.7 0.1 1"/>
+
+        <!-- ドーム（bevel_gear_36と同軸で固定、ジョイントなし）。
+             euler="0 0 180" は blender_export_log.txt の Z軸回転180°に対応。
+             site pos は blender_export_log.txt のローカル座標値。 -->
+        <body name="radar_dome" pos="0 0 0" euler="0 0 0">
+          <inertial pos="0 0 0" mass="0.1" diaginertia="0.001 0.001 0.001"/>
+          <geom name="dome_geom" type="mesh" mesh="radar_dome_mesh"
+                contype="0" conaffinity="0" rgba="0.2 0.5 0.2 1"/>
+          <!-- 距離センサー（libspikehat_sim distance_sensor_body コンポーネント）
+               distance_sensor.io/.ldr を Studio標準姿勢(identity回転)に作り直し、
+               center_mode="pivot_origin" でSTL原点=パーツ自身のピボットとした。
+               pos: T_sensor - T_gear36（Blender world座標の単純差分。
+                    インライン版で実績のある compute_local_body_pos と同じ値。
+                    位置はSTLの内部規約に依存しない物理的な事実のため共通）
+               euler="0 0 -175": ドーム自体の5°傾きがジオメトリに焼き込まれているため、
+                    センサーのbody回転も gear36相対でキャンセルせず、ワールド回転
+                    R_sensor_world をそのまま使い5°を保持して計算（180°-5°=175°）。 -->
+          <body name="sonar_sensor" pos="0.0010 -0.0093 0.0227" euler="0 0 -175">
+            <include file="../sim/libspikehat_sim/examples/components/distance_sensor_body.xml"/>
+          </body>
+          <!-- カラーセンサー（libspikehat_sim color_sensor_body コンポーネント）
+               pos:   gear36基準の単純差分（blender_export.py compute_local_body_pos）
+               euler: ワールド回転をT_conj(diag(-1,-1,1))でMuJoCo変換
+                      Rx(-90°)@Ry(-180°) → 検出面(body local +Y)が世界-Z(下向き)
+               MuJoCo<include>はルート<body>タグを除去しinertial/geom/siteを挿入する -->
+          <body name="color_sensor" pos="-0.0032 0.0393 0.0387" euler="-90 -185 0">
+            <include file="../sim/libspikehat_sim/examples/components/color_sensor_body.xml"/>
+          </body>
+        </body>
+
+      </body>
+
+    </body>
+
+    <!-- starter（フォースセンサーユニット）: sonar_radar09.ldrから算出した位置。
+         sensor_mount: starter サブモデル原点 (LDR→MuJoCo)
+         press_block:  press_block submodel 原点 (同) -->
+    <!-- starter LDR回転 [0,0,-1;0,1,0;1,0,0] × part回転 → sensor euler="0 0 180"
+         press_block: starter LDR回転のみ → euler="0 0 90" -->
+    <body name="sensor_mount" pos="0.0722 0.1037 0.0160" euler="0 0 90">
+      <include file="../sim/libspikehat_sim/examples/components/force_sensor_body.xml"/>
+    </body>
+
+    <body name="press_block" pos="0.072 0.104 0.057" euler="0 0 0">
+      <joint name="press_slide" type="slide" axis="0 0 -1"
+             range="0 0.008" damping="5"/>
+      <inertial pos="0 0 0.014" mass="0.020" diaginertia="0.0001 0.0001 0.0001"/>
+      <geom name="press_geom" type="mesh" mesh="press_block_mesh"
+            contype="0" conaffinity="0" rgba="0.7 0.7 0.7 1"/>
+    </body>
+
+  </worldbody>
+
+  <equality>
+    <!-- ベベルギア(12T-36T)噛み合い: dome_joint = +motor_joint / 3
+         motor_joint axis="0 0 -1"(正=CW), dome_joint axis="0 0 1"(正=CCW)
+         CWモーターに対してCCWドーム → polycoef正 -->
+    <joint joint1="dome_joint" joint2="motor_joint" polycoef="0 0.33333333 0 0 0"/>
+    <!-- シャフト接合: press_slide = button_slide（button_slideがprimary）
+         press_ctrl が button_slide を直接駆動 → press_slide(press_block)が追従
+         solref="0.002 1": 締めて残差 0.013mm を実現 -->
+    <joint joint1="press_slide" joint2="button_slide" polycoef="0 1 0 0 0"
+           solref="0.002 1"/>
+  </equality>
+
+  <actuator>
+    <motor name="turret_motor" joint="motor_joint"
+           gear="10" ctrllimited="true" ctrlrange="-1 1"/>
+    <!-- press_ctrl: button_slide を直接駆動（test_force_sensor と同方式）
+         equality により press_slide(press_block)が button_slide に追従（残差 0.013mm）
+         ctrl=0  → 力ゼロ → スプリングが button と press_block を復元
+         ctrl>0  → button が押し込まれ → equality で press_block も追従
+         ctrl=10N → 最大（実機確認値） -->
+    <motor name="press_ctrl" joint="button_slide"
+           gear="1" ctrllimited="true" ctrlrange="0 10"/>
+    <position name="wall_a_x_ctrl" joint="wall_a_x"
+              kp="50" ctrllimited="true" ctrlrange="-0.08 0.08"/>
+    <position name="wall_a_y_ctrl" joint="wall_a_y"
+              kp="50" ctrllimited="true" ctrlrange="-0.080 0.20"/>
+    <position name="wall_b_x_ctrl" joint="wall_b_x"
+              kp="50" ctrllimited="true" ctrlrange="-0.08 0.136"/>
+    <position name="wall_b_y_ctrl" joint="wall_b_y"
+              kp="50" ctrllimited="true" ctrlrange="-0.040 0.25"/>
+  </actuator>
+
+  <sensor>
+    <!-- 旋回角度・角速度 -->
+    <jointpos  name="turret_angle" joint="motor_joint"/>
+    <jointvel  name="turret_vel"   joint="motor_joint"/>
+    <jointpos  name="dome_angle"   joint="dome_joint"/>
+    <jointvel  name="dome_vel"     joint="dome_joint"/>
+    <!-- センサー位置・姿勢 -->
+    <framepos  name="distance_pos"  objtype="site" objname="distance_site"/>
+    <framequat name="distance_quat" objtype="site" objname="distance_site"/>
+    <framepos  name="color_pos"  objtype="site" objname="color_site"/>
+    <framequat name="color_quat" objtype="site" objname="color_site"/>
+    <!-- スタート/ストップトリガー -->
+    <touch name="force_touch" site="force_site"/>
+  </sensor>
+
+</mujoco>
